@@ -731,7 +731,7 @@ void process_action(keyrecord_t *record, action_t action) {
         case ACT_LAYER_TAP:
         case ACT_LAYER_TAP_EXT:
 #    endif
-            led_set(host_keyboard_leds());
+            //led_set(host_keyboard_leds()); //XAM, don't
             break;
         default:
             break;

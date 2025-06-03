@@ -519,7 +519,7 @@ MATRIX_LOOP_END:
     // update LED
     if (led_status != host_keyboard_leds()) {
         led_status = host_keyboard_leds();
-        keyboard_set_leds(led_status);
+        //keyboard_set_leds(led_status);//XAM
     }
 }
 
@@ -533,5 +533,5 @@ void keyboard_set_leds(uint8_t leds) {
         debug_hex8(leds);
         debug("\n");
     }
-    led_set(leds);
+    //led_set(leds);//XAM
 }

@@ -54,7 +54,10 @@ static uint8_t current_row = 0; // LED row scan counter
 static uint8_t row_idx = 0; // key row scan counter
 extern matrix_row_t raw_matrix[MATRIX_ROWS]; //raw values
 static const uint32_t periodticks = 256;
-static const uint32_t freq = (RGB_MATRIX_HUE_STEP * RGB_MATRIX_SAT_STEP * RGB_MATRIX_VAL_STEP * RGB_MATRIX_SPD_STEP * RGB_MATRIX_LED_PROCESS_LIMIT);
+//XAM TODO freq hoi haunditzeko era txukunen
+///////////////////////////////8                          16                     16                 16                      17
+//static const uint32_t freq = (RGB_MATRIX_HUE_STEP * RGB_MATRIX_SAT_STEP * RGB_MATRIX_VAL_STEP * RGB_MATRIX_SPD_STEP * RGB_MATRIX_LED_PROCESS_LIMIT);
+static const uint32_t freq = 320000;//(RGB_MATRIX_HUE_STEP * RGB_MATRIX_SAT_STEP * RGB_MATRIX_VAL_STEP * RGB_MATRIX_SPD_STEP * RGB_MATRIX_LED_PROCESS_LIMIT);
 static const pin_t led_row_pins[LED_MATRIX_ROWS_HW] = LED_MATRIX_ROW_PINS; // We expect a R,B,G order here
 static const pin_t led_col_pins[LED_MATRIX_COLS] = LED_MATRIX_COL_PINS;
 RGB led_state[DRIVER_LED_TOTAL]; // led state buffer
@@ -333,7 +336,7 @@ void rgb_callback(PWMDriver *pwmp) {
     // Disable LED output before scanning the key matrix
     shared_matrix_rgb_disable_leds();
     shared_matrix_rgb_disable_pwm();
-    #if(DIODE_DIRECTION == COL2ROW)
+    #if(DIODE_DIRECTION == COL2ROW) //AK33 rev2
         // Scan the key matrix row
         matrix_scan_keys(raw_matrix, row_idx);
     #endif

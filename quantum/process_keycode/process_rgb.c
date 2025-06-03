@@ -153,9 +153,9 @@ bool process_rgb(const uint16_t keycode, const keyrecord_t *record) {
 #if defined(RGBLIGHT_ENABLE) && !defined(RGBLIGHT_DISABLE_KEYCODES)
                 rgblight_mode(RGBLIGHT_MODE_STATIC_LIGHT);
 #endif
-#if defined(RGB_MATRIX_ENABLE) && !defined(RGB_MATRIX_DISABLE_KEYCODES)
-                rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
-#endif
+//#if defined(RGB_MATRIX_ENABLE) && !defined(RGB_MATRIX_DISABLE_KEYCODES) && defined(ENABLE_RGB_MATRIX_SOLID_COLOR) //XAM
+//                rgb_matrix_mode(RGB_MATRIX_SOLID_COLOR);
+//#endif
                 return false;
             case RGB_MODE_BREATHE:
 #if defined(RGBLIGHT_ENABLE) && !defined(RGBLIGHT_DISABLE_KEYCODES) && defined(RGBLIGHT_EFFECT_BREATHING)

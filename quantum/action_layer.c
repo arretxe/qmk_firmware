@@ -104,11 +104,12 @@ void layer_state_set(layer_state_t state) {
     layer_state = state;
     layer_debug();
     dprintln();
+	/*XAM: don't clear, don't send HID report, the layers are all not HID related except for BASE
 #    ifdef STRICT_LAYER_RELEASE
     clear_keyboard_but_mods();  // To avoid stuck keys
 #    else
     clear_keyboard_but_mods_and_keys();  // Don't reset held keys
-#    endif
+#    endif*/
 }
 
 /** \brief Layer clear

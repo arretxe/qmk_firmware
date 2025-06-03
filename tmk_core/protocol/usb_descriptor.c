@@ -303,14 +303,23 @@ const USB_Descriptor_HIDReport_Datatype_t PROGMEM RawReport[] = {
     HID_RI_USAGE_PAGE(16, RAW_USAGE_PAGE), // Vendor Defined
     HID_RI_USAGE(8, RAW_USAGE_ID),         // Vendor Defined
     HID_RI_COLLECTION(8, 0x01),    // Application
-        // Data to host
+    
+//#  if RAW_IN_CAPACITY //>0 bidirectional
+#  if !defined(RAW_IN_CAPACITY) //not defined
         HID_RI_USAGE(8, 0x62),     // Vendor Defined
         HID_RI_LOGICAL_MINIMUM(8, 0x00),
         HID_RI_LOGICAL_MAXIMUM(16, 0x00FF),
         HID_RI_REPORT_COUNT(8, RAW_EPSIZE),
         HID_RI_REPORT_SIZE(8, 0x08),
         HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE),
-
+#  elif RAW_IN_CAPACITY > 0 //defined as non zero
+        HID_RI_USAGE(8, 0x62),     // Vendor Defined
+        HID_RI_LOGICAL_MINIMUM(8, 0x00),
+        HID_RI_LOGICAL_MAXIMUM(16, 0x00FF),
+        HID_RI_REPORT_COUNT(8, RAW_EPSIZE),
+        HID_RI_REPORT_SIZE(8, 0x08),
+        HID_RI_INPUT(8, HID_IOF_DATA | HID_IOF_VARIABLE | HID_IOF_ABSOLUTE),
+# endif //if 0 unidirectional
         // Data from host
         HID_RI_USAGE(8, 0x63),     // Vendor Defined
         HID_RI_LOGICAL_MINIMUM(8, 0x00),
@@ -520,7 +529,14 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
         },
         .InterfaceNumber        = RAW_INTERFACE,
         .AlternateSetting       = 0x00,
-        .TotalEndpoints         = 2,
+//#  if RAW_IN_CAPACITY //if >0 bidirectional
+#  if !defined(RAW_IN_CAPACITY) //not defined
+        .TotalEndpoints         = 2,	
+#  elif RAW_IN_CAPACITY > 0 //defined as non zero
+        .TotalEndpoints         = 2,	
+#  else
+        .TotalEndpoints         = 1,
+# endif //if 0 unidirectional	
         .Class                  = HID_CSCP_HIDClass,
         .SubClass               = HID_CSCP_NonBootSubclass,
         .Protocol               = HID_CSCP_NonBootProtocol,
@@ -537,6 +553,9 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
         .HIDReportType          = HID_DTYPE_Report,
         .HIDReportLength        = sizeof(RawReport)
     },
+
+
+#  if !defined(RAW_IN_CAPACITY) //not defined-> bidir	
     .Raw_INEndpoint = {
         .Header = {
             .Size               = sizeof(USB_Descriptor_Endpoint_t),
@@ -547,6 +566,18 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
         .EndpointSize           = RAW_EPSIZE,
         .PollingIntervalMS      = 0x01
     },
+#  elif RAW_IN_CAPACITY > 0 //defined as non zero	
+    .Raw_INEndpoint = {
+        .Header = {
+            .Size               = sizeof(USB_Descriptor_Endpoint_t),
+            .Type               = DTYPE_Endpoint
+        },
+        .EndpointAddress        = (ENDPOINT_DIR_IN | RAW_IN_EPNUM),
+        .Attributes             = (EP_TYPE_INTERRUPT | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
+        .EndpointSize           = RAW_EPSIZE,
+        .PollingIntervalMS      = 0x01
+    },
+# endif //if 0 unidirectional
     .Raw_OUTEndpoint = {
         .Header = {
             .Size               = sizeof(USB_Descriptor_Endpoint_t),
@@ -811,7 +842,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
             .EndpointAddress    = (ENDPOINT_DIR_OUT | MIDI_STREAM_OUT_EPNUM),
             .Attributes         = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
             .EndpointSize       = MIDI_STREAM_EPSIZE,
-            .PollingIntervalMS  = 0x05
+            .PollingIntervalMS  = 0x1//XAM TODO set to 1ms isntead of 5ms?
         },
         .Refresh                = 0,
         .SyncEndpointNumber     = 0
@@ -834,7 +865,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
             .EndpointAddress    = (ENDPOINT_DIR_IN | MIDI_STREAM_IN_EPNUM),
             .Attributes         = (EP_TYPE_BULK | ENDPOINT_ATTR_NO_SYNC | ENDPOINT_USAGE_DATA),
             .EndpointSize       = MIDI_STREAM_EPSIZE,
-            .PollingIntervalMS  = 0x05
+            .PollingIntervalMS  = 0x1//XAM set to 1ms instead of 5 TODO hau normaltzea
         },
         .Refresh                = 0,
         .SyncEndpointNumber     = 0

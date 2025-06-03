@@ -15,30 +15,715 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include QMK_KEYBOARD_H
+#include "process_midi.h"
+//#include "raw_hid.h"
+//#include "qmk_rc.h"
+#include "rgb_matrix.h"
+
+#include "color.h"
+#include "quantum.h" //for reset eeprom
+
+
+
+extern matrix_row_t raw_matrix[MATRIX_ROWS]; //raw values
+extern matrix_row_t last_matrix[MATRIX_ROWS];  // raw values
+extern matrix_row_t matrix[MATRIX_ROWS]; //debounced values
+void enter_drum_mode(bool IN_OUT);
+
+// void bootmagic_lite(void) {
+    // We need multiple scans because debouncing can't be turned off.
+    //matrix_scan();
+	// matrix_scan_keys(raw_matrix,0);
+	// matrix_scan();
+// #if defined(DEBOUNCE) && DEBOUNCE > 0
+    // wait_ms(DEBOUNCE * 2);
+// #else
+    // wait_ms(10);
+// #endif
+    //matrix_scan();
+	// matrix_scan_keys(raw_matrix,0);
+    // matrix_scan();
+    // If the configured key (commonly Esc) is held down on power up,
+    // reset the EEPROM valid state and jump to bootloader.
+    // This isn't very generalized, but we need something that doesn't
+    // rely on user's keymaps in firmware or EEPROM.
+    
+	//uint8_t row = BOOTMAGIC_LITE_ROW;
+    //uint8_t col = BOOTMAGIC_LITE_COLUMN;
+
+
+
+    //if (matrix_get_row(row) & (1 << col)) {
+		// if(raw_matrix[0] != 0){//only first button is pressed
+        // //bootmagic_lite_reset_eeprom();// custom itteko aukera emtaue berezs eztu eze itten
+        // eeconfig_init(); //XAM proatzeko gehittuet
+		// eeconfig_disable();//XAM kenduta neuken baino garbi itteko hola igual hobe?
+        // // Jump to bootloader.
+        // bootloader_jump();
+    // }
+// }
 
 // Each layer gets a name for readability, which is then used in the keymap matrix below.
 // The underscores don't mean anything - you can have a layer called STUFF or any other name.
 // Layer names don't all need to be of the same length, obviously, and you can also skip them
 // entirely and just use numbers.
 enum layer_names {
-    _BASE,
-    _FN,
+	/*_BASE,*/
+#if defined(MIDI_TRIKL)
+    _MIDI,
+    _BELOW,
+	_MIDIALT,
+	_BELOWALT,
+	_MIDIDRUM,
+	_BELOWDRUM,
+#endif
+	_BASE,
+  _FN,
+	_FN2,
 };
 
-const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    /*  Row:        0           1           2           3        4           5        6        7           8           9           10          11          12          13          14          15      */
-    [_BASE] = { {   KC_ESC,     KC_NO,      KC_F1,      KC_F2,   KC_F3,      KC_F4,   KC_F5,   KC_F6,      KC_F7,      KC_F8,      KC_F9,      KC_F10,     KC_F11,     KC_F12,     MO(_FN),    KC_DEL  },
-                {   KC_GRV,     KC_1,       KC_2,       KC_3,    KC_4,       KC_5,    KC_6,    KC_7,       KC_8,       KC_9,       KC_0,       KC_MINS,    KC_EQL,     KC_BSPC,    KC_NO,      KC_HOME },
-                {   KC_TAB,     KC_Q,       KC_W,       KC_E,    KC_R,       KC_T,    KC_Y,    KC_U,       KC_I,       KC_O,       KC_P,       KC_LBRC,    KC_RBRC,    KC_BSLS,    KC_NO,      KC_PGUP },
-                {   KC_CAPS,    KC_A,       KC_S,       KC_D,    KC_F,       KC_G,    KC_H,    KC_J,       KC_K,       KC_L,       KC_SCLN,    KC_QUOT,    KC_NO,      KC_ENT,     KC_NO,      KC_PGDN },
-                {   KC_LSFT,    KC_NO,      KC_Z,       KC_X,    KC_C,       KC_V,    KC_B,    KC_N,       KC_M,       KC_COMM,    KC_DOT,     KC_SLSH,    KC_RSFT,    KC_UP,      KC_NO,      KC_END  },
-                {   KC_LCTL,    KC_LGUI,    KC_LALT,    KC_NO,   KC_NO,      KC_NO,   KC_SPC,  KC_NO,      KC_NO,      KC_NO,      KC_RALT,    KC_RCTL,    KC_LEFT,    KC_DOWN,    KC_NO,      KC_RGHT }
+enum my_keycodes {
+  FUNC = SAFE_RANGE,
+  FUNC2,
+  MOBELOW,
+  MOBELOWALT,
+  MOBELOWDRUM,
+  PANIKO,
+  BASS_MUTE
+};
+
+//XAM TODO: beste bi kapa, base letrak, ta beste bi kapatan midik -> FN+zeoze izatea beste kapata saltatzeko, ta berriz berdine bueltatzeko
+//MIDI modun daonen LED-a piztu?
+const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = { //TODO: XAM: repe daren botoiai belozidade pixkat diferentea eman proatzeko?
+    /*  Row:        0           1           2           3        4           5        6           7           8           9           10          11          12          13          14            15      */
+
+#if defined(MIDI_TRIKL)    
+  #if defined(TRIKL_IX10_T)  
+//TAPIA
+/*[_MIDI] = { {   FUNC, _______,      MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_Fs_2,    MI_Ds_3,    MI_Gs_2,     _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                {   _______,     _______,      MI_B_4,     MI_G_4,  MI_F_4,     MI_D_4,  MI_B_3,     MI_G_3,     MI_F_3,     MI_D_3,     MI_B_2,     MI_Gs_3,    MI_Ds_4, _______,    _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+                {   _______, _______,   _______,    _______,   _______,    _______,    _______,    _______,     _______,     _______,     _______,     _______,    _______, _______, _______,       MI_VELU},//MI_VELUMI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },
+//                {   _______, _______,      _______,  _______,   MI2_F_1,    MI2_Fs_1, MI2_D_1,    MI2_Ds_1,   MI2_A_1,    MI2_As_1,   _______,    _______,    _______,     _______,    _______,      MI2_OCTD},//MI_TRNSU},//KC_PGDN },
+//                {   _______, _______,      _______,  _______,   MI2_C_1,    MI2_Cs_1, MI2_G_1,    MI2_Gs_1,    MI2_E_1,    MI2_B_1,   _______,    _______,    _______,     _______,    _______,      MI_TRNS_3},//MI2_OCTD  },
+                {   _______, _______,      _______,  _______,   MI2_F_1,    MI3_A_1, MI2_D_1,    MI3_Fs_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,     _______,    _______,      MI_TRNS_0},//MI_TRNSU},//KC_PGDN },
+                {   _______, _______,      _______,  _______,   MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_E_1,    MI3_Gs_1,   _______,    _______,    _______,     _______,    _______,      MI_TRNS_3},//MI2_OCTD  },
+                {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
               },
-    [_FN]   = { {   RESET,      KC_MUTE,    _______,    KC_MPLY, KC_VOLD,    KC_VOLU, _______, _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    KC_INS  },
-                {   _______,    _______,    _______,    _______, _______,    _______, _______, _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    KC_PAUSE},
-                {   _______,    _______,    _______,    _______, _______,    _______, _______, _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______ },
-                {   _______,    _______,    _______,    _______, _______,    _______, _______, _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______ },
-                {   _______,    _______,    _______,    _______, _______,    _______, _______, _______,    _______,    _______,    _______,    _______,    _______,    RGB_VAI,    _______,    KC_PSCR },
-                {   _______,    _______,    _______,    _______, _______,    _______, _______, _______,    _______,    _______,    _______,    _______,    RGB_HUD,    RGB_VAD,    _______,    RGB_HUI }
+
+    [_BELOW]= { {   FUNC,     _______,  MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,     MI_Cs_3,    MI_As_2,    _______,    MI_TRNSD},//MI_OCTD  },
+                {   _______,     _______,      MI_E_5,    MI_C_5,  MI_A_4,     MI_E_4,  MI_C_4,     MI_A_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_As_3,    MI_Cs_4,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                {   _______,               _______,  _______,   _______,   _______,   _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______, _______, _______, MI_VELD},//MI_VELD MI_TRNSD},//MI_TRNSD },
+//                {   _______,     _______,      _______,     _______, MI2_F_1,    MI2_Fs_1, MI2_D_1,    MI2_Ds_1,   MI2_A_1,    MI2_As_1,    _______,    _______,    _______,    _______,    _______,    MI_TRNS_2},//TO(_MIDIALT)},//TO(_MIDIDRUM)},//MI_TRNSU },
+//                {   _______,     _______,      _______,     _______, MI2_C_1,    MI2_Cs_1, MI2_G_1,    MI2_Gs_1,    MI2_E_1,    MI2_B_1,   _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______,     _______,      _______,     _______, MI2_F_1,    MI3_A_1, MI2_D_1,    MI3_Fs_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,    _______,    _______,    MI_TRNS_5},//TO(_MIDIALT)},//TO(_MIDIDRUM)},//MI_TRNSU },
+                {   _______,     _______,      _______,     _______, MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_E_1,    MI3_Gs_1,   _______,    _______,    _______,    _______,    _______,    TRIKL_ALT_TGL},//TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+              },*///------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+[_MIDI] =      { {   FUNC, _______,      MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_Fs_2,    MI_Ds_3,    MI_Gs_2,     _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                {   _______,  _______,      MI_B_4,   MI_A_4,  MI_F_4,     MI_D_4,    MI_B_3,    MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,     MI_Gs_3,    MI_Ds_4, _______,    _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+                {   _______, _______,   _______,    _______,   _______,    _______,    _______,    _______,     _______,     _______,     _______,     _______,    _______, _______, _______,       MI_VELU},//MI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },
+//                {   _______, _______,      _______,  _______,   MI2_F_1,    MI2_Fs_1, MI2_D_1,    MI2_Ds_1,   MI2_A_1,    MI2_As_1,   _______,    _______,    _______,     _______,    _______,      MI2_OCTD},//MI_TRNSU},//KC_PGDN },
+//                {   _______, _______,      _______,  _______,   MI2_C_1,    MI2_Cs_1, MI2_G_1,    MI2_Gs_1,    MI2_E_1,    MI2_B_1,   _______,    _______,    _______,     _______,    _______,      MI_TRNS_3},//MI2_OCTD  },
+                {   _______, _______,      _______,  _______,   MI2_F_1,    MI3_A_1, MI2_D_1,    MI3_Fs_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,     _______,    _______,      MI_TRNS_0},//MI_TRNSU},//KC_PGDN },
+                {   _______, _______,      _______,  _______,   MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_E_1,    MI3_Gs_1,   _______,    _______,    _______,     _______,    _______,      MI_TRNS_3},//MI2_OCTD  },
+                {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },
+
+    [_BELOW]= { {   FUNC,     _______,  MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,     MI_Cs_3,    MI_As_2,    _______,    MI_TRNSD},//MI_OCTD  },
+                {   _______,     _______,      MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_As_3,    MI_Cs_4,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                {   _______,               _______,  _______,   _______,   _______,   _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______, _______, _______, MI_VELD},//MI_VELD MI_TRNSD},//MI_TRNSD },
+//                {   _______,     _______,      _______,     _______, MI2_F_1,    MI2_Fs_1, MI2_D_1,    MI2_Ds_1,   MI2_A_1,    MI2_As_1,    _______,    _______,    _______,    _______,    _______,    MI_TRNS_2},//TO(_MIDIALT)},//TO(_MIDIDRUM)},//MI_TRNSU },
+//                {   _______,     _______,      _______,     _______, MI2_C_1,    MI2_Cs_1, MI2_G_1,    MI2_Gs_1,    MI2_E_1,    MI2_B_1,   _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______,     _______,      _______,     _______, MI2_F_1,    MI3_A_1, MI2_D_1,    MI3_Fs_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,    _______,    _______,    MI_TRNS_5},//TO(_MIDIDRUM)},//TO(_MIDIALT)},//TO(_MIDIDRUM)},//MI_TRNSU },
+                {   _______,     _______,      _______,     _______, MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_E_1,    MI3_Gs_1,   _______,    _______,    _______,    _______,    _______,    TRIKL_ALT_TGL},//TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+              },//------
+////// PICHARDO
+/*  [_MIDI] = { {   FUNC, _______,      MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_Fs_2,    MI_D_2,    MI_Ds_3,     _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                {   _______,     _______,      MI_B_4,     MI_A_4,  MI_F_4,     MI_D_4,  MI_B_3,     MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,     MI_G_2,    MI_Gs_3, _______,    _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+                {   _______, _______,   _______,    _______,   _______,    _______,    _______,    _______,     _______,     _______,     _______,     _______,    _______, _______, _______,       MI2_OCTU},//MI_VELUMI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },
+//                {   _______, _______,      _______,  _______,   MI2_F_1,    MI2_Fs_1, MI2_D_1,    MI2_Ds_1,   MI2_A_1,    MI2_As_1,   _______,    _______,    _______,     _______,    _______,      MI2_OCTD},//MI_TRNSU},//KC_PGDN },
+//                {   _______, _______,      _______,  _______,   MI2_C_1,    MI2_Cs_1, MI2_G_1,    MI2_Gs_1,    MI2_E_1,    MI2_B_1,   _______,    _______,    _______,     _______,    _______,      MI_TRNS_3},//MI2_OCTD  },
+                {   _______, _______,      _______,  _______,   MI2_F_1,    MI3_A_1, MI2_C_1,    MI4_Ds_1,   MI2_E_1,    MI4_G_1,     _______,    _______,    _______,     _______,    _______,      MI_TRNS_3},//MI_TRNSU},//KC_PGDN },
+                {   _______, _______,      _______,  _______,   MI2_G_1,    MI3_B_1, MI2_D_1,    MI3_Fs_1,   MI2_A_1,    MI3_Cs_2,   _______,    _______,    _______,     _______,    _______,      MI_TRNS_0},//MI2_OCTD  },
+                {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },
+
+    [_BELOW]= { {   FUNC,     _______,  MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,     MI_B_1,    MI_Cs_3,    _______,    MI_TRNSD},//MI_OCTD  },
+                {   _______,     _______,      MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_E_2,    MI_As_3,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                {   _______,               _______,  _______,   _______,   _______,   _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______, _______, _______, MI2_OCTD},//MI_VELD MI_TRNSD},//MI_TRNSD },
+//                {   _______,     _______,      _______,     _______, MI2_F_1,    MI2_Fs_1, MI2_D_1,    MI2_Ds_1,   MI2_A_1,    MI2_As_1,    _______,    _______,    _______,    _______,    _______,    MI_TRNS_2},//TO(_MIDIALT)},//TO(_MIDIDRUM)},//MI_TRNSU },
+//                {   _______,     _______,      _______,     _______, MI2_C_1,    MI2_Cs_1, MI2_G_1,    MI2_Gs_1,    MI2_E_1,    MI2_B_1,   _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______,     _______,      _______,     _______, MI2_A_1,    MI3_Cs_2, MI2_E_1,    MI3_Gs_1,   MI2_B_1,    MI3_Ds_1,    _______,    _______,    _______,    _______,    _______,    MI_TRNS_3},//TO(_MIDIALT)},//TO(_MIDIDRUM)},//MI_TRNSU },
+                {   _______,     _______,      _______,     _______, MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_D_1,    MI3_Fs_1,   _______,    _______,    _______,    _______,    _______,    MI_TRNS_0},//TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+              },*///------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//irish                                                                                                                                                                     //MI_TRNSU  MI_OCTU MI_TRNS_0 MI_TRNS_N2 TRIKL_ALT_TGL TRIKL_REG_TGL TO(_MIDIDRUM) MI_BENDD BASS_MUTE
+    // [_MIDI] = { {   FUNC, _______,      MI_Cs_5,   MI_As_4,   MI_Gs_4,    MI_E_4,    MI_Cs_4,    MI_As_3,    MI_Gs_3,     MI_E_3,     MI_Cs_3,     MI_As_2,    MI_Gs_2,    MI_E_2,     _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+    //             {   _______,     _______,      MI_B_4,     MI_A_4,  MI_F_4,     MI_D_4,    MI_B_3,     MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,     MI_A_2,    MI_F_2, _______,    _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+    //             {   _______, _______,   _______,    _______,   _______,    _______,    _______,    _______,     _______,     _______,     _______,     _______,    _______, _______, _______,       MI2_OCTU},//MI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },
+    //             {   _______, _______,      _______,  _______,   _______,    MI2_F_1, MI3_A_1,    MI2_A_1,    MI3_Cs_2,    _______,    _______,    _______,    _______,     _______,    _______,      MI_TRNS_0},//MI_TRNSU},//KC_PGDN },
+    //             {   _______, _______,      _______,  _______,   _______,    MI2_G_1, MI3_B_1,    MI2_D_1,    MI3_Fs_1,    _______,   _______,    _______,    _______,     _______,    _______,      MI_TRNS_2},//MI2_OCTD  },
+    //             {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+    //           },
+
+    // [_BELOW]= { {   FUNC,     _______,  MI_Fs_5,    MI_Ds_5,  MI_B_4,     MI_Fs_4,  MI_Ds_4,     MI_B_3,    MI_Fs_3,     MI_Ds_3,     MI_B_2,     MI_Fs_2,     MI_Ds_2,    MI_B_1,    _______,    MI_TRNSD},//MI_OCTD  },
+    //             {   _______,     _______,      MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,    MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_E_2,    MI_C_2,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+    //             {   _______,               _______,  _______,   _______,   _______,   _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+    //             {   _______,     _______,      _______,     _______, _______,    MI2_D_1, MI3_Fs_1,    MI2_E_1,   MI3_Gs_1,    _______,    _______,    _______,    _______,    _______,    _______,    MI_TRNS_0},//TO(_MIDIALT)},//TO(_MIDIDRUM)},//MI_TRNSU },
+    //             {   _______,     _______,      _______,     _______, _______,    MI2_C_1, MI3_E_1,    MI2_G_1,    MI3_B_1,    _______,   _______,    _______,    _______,    _______,    _______,    MI_TRNS_2},//TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+    //             {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+            //   },//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+            /*LOGAN G/G#*//*[_MIDI] = { {FUNC, _______,      MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_Fs_2,    MI_E_2,    MI_C_2,     _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                {   _______,     _______,      MI_G_4,     MI_F_4,  MI_Cs_4,     MI_As_3,  MI_G_3,     MI_F_3,     MI_Cs_3,     MI_As_2,     MI_G_2,     MI_F_2,    MI_Cs_2, _______,    _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+                {   _______, _______,   _______,    _______,   _______,    _______,    _______,    _______,     _______,     _______,     _______,     _______,    _______, _______, _______,       MI_VELU},//MI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },
+//                {   _______, _______,      _______,  _______,   MI2_F_1,    MI2_Fs_1, MI2_D_1,    MI2_Ds_1,   MI2_A_1,    MI2_As_1,   _______,    _______,    _______,     _______,    _______,      MI2_OCTD},//MI_TRNSU},//KC_PGDN },
+//                {   _______, _______,      _______,  _______,   MI2_C_1,    MI2_Cs_1, MI2_G_1,    MI2_Gs_1,    MI2_E_1,    MI2_B_1,   _______,    _______,    _______,     _______,    _______,      MI_TRNS_3},//MI2_OCTD  },
+                {   _______, _______,      _______,  _______,   MI2_Fs_1,    MI3_As_2, MI2_As_1,    MI4_Cs_2,   MI2_G_1,    MI3_B_2,    _______,    _______,    _______,     _______,    _______,      MI_TRNS_6},//MI_TRNSU},//KC_PGDN },
+                {   _______, _______,      _______,  _______,   MI2_Gs_1,    MI3_C_1, MI2_Ds_1,    MI3_G_1,    MI2_Cs_1,    MI3_F_1,   _______,    _______,    _______,     _______,    _______,      MI_TRNS_7},//MI2_OCTD  },
+                {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },
+
+    [_BELOW]= { {   FUNC,     _______,  MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,     MI_Cs_2,    MI_G_1,    _______,    MI_TRNSD},//MI_OCTD  },
+                {   _______,     _______,      MI_C_5,    MI_Gs_4,  MI_Ds_4,     MI_C_4,  MI_Gs_3,     MI_Ds_3,    MI_C_3,     MI_Gs_2,     MI_Ds_2,     MI_C_2,    MI_Gs_1,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                {   _______,               _______,  _______,   _______,   _______,   _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______, _______, _______, MI_VELD},//MI_TRNSD},//MI_TRNSD },
+//                {   _______,     _______,      _______,     _______, MI2_F_1,    MI2_Fs_1, MI2_D_1,    MI2_Ds_1,   MI2_A_1,    MI2_As_1,    _______,    _______,    _______,    _______,    _______,    MI_TRNS_2},//TO(_MIDIALT)},//TO(_MIDIDRUM)},//MI_TRNSU },
+//                {   _______,     _______,      _______,     _______, MI2_C_1,    MI2_Cs_1, MI2_G_1,    MI2_Gs_1,    MI2_E_1,    MI2_B_1,   _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______,     _______,      _______,     _______, MI2_B_1,    MI3_Ds_1, MI2_F_1,    MI3_A_1,   MI2_C_1,    MI3_E_2,    _______,    _______,    _______,    _______,    _______,    MI_TRNS_4},//TO(_MIDIALT)},//TO(_MIDIDRUM)},//MI_TRNSU },
+                {   _______,     _______,      _______,     _______, MI2_Cs_1,    MI3_F_1, MI2_Gs_1,    MI3_C_1,    MI2_Ds_1,    MI3_G_1,   _______,    _______,    _______,    _______,    _______,    TRIKL_ALT_TGL},//TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+              },*///------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  [_MIDIALT] = { {  FUNC,     _______,      MI_A_4,     MI_Fs_4, MI_E_4,     MI_C_4,  MI_A_3,     MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_Fs_2,    MI_Ds_3,    MI_Gs_2,    _______,    MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                {   _______,     MI_D_5,     MI_B_4,     MI_A_4,  MI_F_4,     MI_D_4,  MI_B_3,     MI_G_3,     MI_F_3,     MI_D_3,     MI_B_2,     MI_Gs_3,    MI_Ds_4,    _______,    _______,      MI_OCTU},//MI2_OCTU},//MI_OCTU},//KC_HOME },
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,        MI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },
+                {   _______,    _______,       _______,       _______,    MI2_F_1,    MI3_A_1, MI2_D_1,    MI3_Fs_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_0},//MI_TRNSU},//KC_PGDN },
+                {   _______,    _______,      _______,     _______,    MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_E_1,    MI3_Gs_1,   _______,     _______,    _______,    _______,      _______,      MI_TRNS_3},//MI2_OCTD  },
+                {   _______,       _______,    _______,    _______,   _______,      _______,   MOBELOWALT, _______, _______,    _______,    MOBELOWALT, _______,    _______,    _______,    _______,      TRIKL_REG_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },
+   [_BELOWALT]= { {FUNC,    _______,     MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,     MI_Cs_3,    MI_As_2,    _______,    MI_TRNSD},//MI_OCTD  },
+                {   _______,    _______,     MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_A_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_As_3,    MI_Cs_4,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+                {   _______,    _______,    _______,    _______, MI2_F_1,    MI3_A_1, MI2_D_1,    MI3_Fs_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,    _______,    _______,    TO(_MIDI)},//MI_TRNS_6},//MI_TRNSU },
+                {   _______,    _______,    _______,    _______, MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_E_1,    MI3_Gs_1,   _______,    _______,    _______,    _______,    _______,    TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//MI2_OCTU }
+              },//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	
+#elif defined(TRIKL_IX11_T)    
+//UK
+//    [_MIDI] = { {   FUNC, _______,      MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_Fs_2,    MI_D_2,    MI_Ds_3,     _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+//                {   _______,     _______,      MI_B_4,     MI_A_4,  MI_F_4,     MI_D_4,  MI_B_3,     MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,     MI_F_2,    MI_Gs_3, _______,    _______,      MI_OCTD},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+//                {   _______,               _______,  MI_As_4,   MI_G_4,   MI_Cs_4,   MI_As_3,   MI_G_3,    MI_Cs_3,    MI_As_2,    MI_G_2,  MI_Cs_2,    MI_As_1,    _______, _______, _______, TO(_MIDIALT)},//MI2_OCTU},//
+//                /*{   _______,               _______,  MI_Cs_5,   MI_As_4,   MI_Gs_4,   MI_Ds_4,   MI_Cs_4,    MI_As_3,    MI_Gs_3,    MI_Ds_3,    MI_Cs_3,    MI_As_2,    _______, _______, _______, MI2_OCTU},//*/
+//                /*{   _______,               MI_E_5,   MI_D_5, MI_As_4,   MI_G_4,   MI_E_4,   MI_D_4,    MI_As_3,    MI_G_3,    MI_E_3,  MI_D_3,  MI_Ds_3,    MI_Gs_2, _______, _______, MI_BENDD},//MI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },*/
+//                {   _______,    _______,       _______,       _______,  MI2_F_0,    MI3_A_1, MI2_A_1,    MI4_C_2,     MI2_As_0,    MI3_D_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_7},//MI_TRNSU},//KC_PGDN },
+//                {   _______,    _______,      _______,     _______,     MI2_G_0,    MI3_B_1, MI2_D_1,    MI3_Fs_1,    MI2_B_0,    MI4_D_2,   _______,     _______,    _______,    _______,      _______,      MI_TRNS_5},//MI2_OCTD  },
+//                {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+//              },
+//
+//    [_BELOW]= { {   FUNC,     _______,  MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,     MI_C_2,    MI_Cs_3,    _______,    MI_TRNSD},//MI_OCTD  },
+//                {   _______,     _______,      MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_E_2,    MI_As_3,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+//                {   _______,               _______,  MI_Gs_4,   MI_A_4,   MI_Ds_4,   MI_Gs_3,   MI_A_3,    MI_Ds_3,    MI_Gs_2,    MI_A_2,    MI_Ds_2,    MI_Gs_1,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+//                /*{   _______,               _______,  MI_Cs_5,   MI_As_4,   MI_Gs_4,   MI_Ds_4,   MI_Cs_4,    MI_As_3,    MI_Gs_3,    MI_Ds_3,    MI_Cs_3,    MI_As_2,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },*/
+//                {   _______,    _______,       _______,       _______,  MI2_F_0,    MI3_A_1, MI2_E_1,    MI3_Gs_1,   MI2_Ds_1,    MI3_G_1,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_2},//MI_TRNSU},//KC_PGDN },
+//                {   _______,    _______,      _______,     _______,     MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_Gs_0,    MI3_C_2,   _______,     _______,    _______,    _______,      _______,      TRIKL_DRUM_TGL},//MI2_OCTD  },
+//                {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_REG_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+//              },//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//    [_MIDIALT] = { {   FUNC, _______,      MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_Fs_2,    MI_D_2,    MI_Ds_3,     _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+//                {   _______,     _______,      MI_B_4,     MI_A_4,  MI_F_4,     MI_D_4,  MI_B_3,     MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,     MI_As_2,    MI_Gs_3, _______,    _______,      MI_OCTD},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+//                {   _______,               _______,  MI_As_4,   MI_G_4,   MI_Ds_4,   MI_G_3,   MI_As_3,    MI_Ds_3,    MI_G_2,    MI_G_2,  MI_Cs_2,    MI_As_1,    _______, _______, _______, TO(_MIDI)},//MI2_OCTU},//
+//                /*{   _______,               _______,  MI_Cs_5,   MI_As_4,   MI_Gs_4,   MI_Ds_4,   MI_Cs_4,    MI_As_3,    MI_Gs_3,    MI_Ds_3,    MI_Cs_3,    MI_As_2,    _______, _______, _______, MI2_OCTU},//*/
+//                /*{   _______,               MI_E_5,   MI_D_5, MI_As_4,   MI_G_4,   MI_E_4,   MI_D_4,    MI_As_3,    MI_G_3,    MI_E_3,  MI_D_3,  MI_Ds_3,    MI_Gs_2, _______, _______, MI_BENDD},//MI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },*/
+//                {   _______,    _______,       _______,       _______,  MI2_F_0,    MI3_A_1, MI2_A_1,    MI4_C_2,     MI2_As_0,    MI3_D_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_7},//MI_TRNSU},//KC_PGDN },
+//                {   _______,    _______,      _______,     _______,     MI2_G_0,    MI3_B_1, MI2_D_1,    MI3_Fs_1,    MI2_D_1,    MI4_F_1,   _______,     _______,    _______,    _______,      _______,      MI_TRNS_5},//MI2_OCTD  },
+//                {   _______, _______,      _______,  _______,   _______,    _______, MOBELOWALT,    _______,    _______,     _______,   MOBELOWALT,    _______,    _______,     _______,    _______,      TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+//              },
+//
+//    [_BELOWALT]= { {   FUNC,     _______,  MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,     MI_C_2,    MI_Cs_3,    _______,    MI_TRNSD},//MI_OCTD  },
+//                {   _______,     _______,      MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_E_2,    MI_As_3,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+//                {   _______,               _______,  MI_Gs_4,   MI_A_4,   MI_Cs_4,   MI_F_3,   MI_Gs_3,    MI_Cs_3,    MI_A_2,    MI_A_2,    MI_Ds_2,    MI_Gs_1,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+//                /*{   _______,               _______,  MI_Cs_5,   MI_As_4,   MI_Gs_4,   MI_Ds_4,   MI_Cs_4,    MI_As_3,    MI_Gs_3,    MI_Ds_3,    MI_Cs_3,    MI_As_2,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },*/
+//                {   _______,    _______,       _______,       _______,  MI2_F_0,    MI3_A_1, MI2_E_1,    MI3_Gs_1,   MI2_B_0,    MI4_D_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_2},//MI_TRNSU},//KC_PGDN },
+//                {   _______,    _______,      _______,     _______,     MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_A_0,    MI4_C_2,   _______,     _______,    _______,    _______,      _______,      TRIKL_DRUM_TGL},//MI2_OCTD  },
+//                {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_REG_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+//              },//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// /*FR*/     [_MIDI] = { {   FUNC, _______,   MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,    MI_Fs_2, MI_E_2, _______ ,    _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+//                  {   _______,             MI_D_5,    MI_B_4,   MI_A_4,    MI_F_4,     MI_D_4,   MI_B_3,    MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,  MI_A_2, MI_F_2,    _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+//                  {   _______,                 MI_Cs_5, MI_Bb_4,  MI_Gs_4,   MI_G_4,     MI_Cs_4,  MI_Bb_3,   MI_Gs_3,    MI_G_3,    MI_Cs_3,    MI_Bb_2,   MI_Gs_2,    _______, _______, _______, MI2_OCTU},//
+//                  /*{   _______,               _______,  MI_Cs_5,   MI_As_4,   MI_Gs_4,   MI_Ds_4,   MI_Cs_4,    MI_As_3,    MI_Gs_3,    MI_Ds_3,    MI_Cs_3,    MI_As_2,    _______, _______, _______, MI2_OCTU},//*/
+//                  /*{   _______,               MI_E_5,   MI_D_5, MI_As_4,   MI_G_4,   MI_E_4,   MI_D_4,    MI_As_3,    MI_G_3,    MI_E_3,  MI_D_3,  MI_Ds_3,    MI_Gs_2, _______, _______, MI_BENDD},//MI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },*/
+//                  {   _______,    _______,       _______,       _______,    MI2_F_1,   MI3_A_1, MI2_A_1,    MI3_Cs_2,   MI2_Bb_1,    MI3_D_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_3},//MI_TRNSU},//KC_PGDN },
+//                  {   _______,    _______,      _______,     _______,      MI2_G_1,    MI3_B_1, MI2_D_1,    MI3_Fs_1,    MI2_B_1,    MI3_Ds_2,   _______,     _______,    _______,    _______,      _______,      MI_TRNS_0},//MI2_OCTD  },
+//                  {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+//                },
+
+//      [_BELOW]= { {   FUNC,     _______,   MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,  MI_B_2,   _______, _______,    MI_TRNSD},//MI_OCTD  },
+//                  {   _______,        MI_G_5,   MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_E_2,  MI_C_2,  _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+//                  {   _______,               MI_Gs_5, MI_Eb_5,  MI_Bb_4,   MI_Gs_4,   MI_Eb_4,   MI_Bb_3,   MI_Gs_3,    MI_Eb_3,    MI_Bb_2,    MI_Gs_2,  MI_Eb_2,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+//                  /*{   _______,               _______,  MI_Cs_5,   MI_As_4,   MI_Gs_4,   MI_Ds_4,   MI_Cs_4,    MI_As_3,    MI_Gs_3,    MI_Ds_3,    MI_Cs_3,    MI_As_2,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },*/
+//                  {   _______,    _______,       _______,    _______,    MI2_F_1,    MI3_A_1, MI2_E_1,    MI3_Gs_1,   MI2_Eb_1,    MI3_G_1,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_5},//MI_TRNSU},//KC_PGDN },
+//                  {   _______,    _______,      _______,     _______,    MI2_C_1,     MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_Gs_1,    MI3_C_2,   _______,     _______,    _______,    _______,      _______,      TRIKL_ALT_TGL},//MI2_OCTD  },
+//                  {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+//                },//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/*HELI*/     [_MIDI] = { {   FUNC,_______, MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,    MI_Fs_2, MI_D_2, MI_Ds_3 ,    _______,   MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                 {   _______,  _______,  MI_B_4,   MI_A_4,    MI_F_4,     MI_D_4,   MI_B_3,    MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,  MI_G_2, MI_Gs_3,        _______, _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+                 {   _______,      _______,   MI_D_5,      MI_As_4,    MI_G_4,   MI_E_4,     MI_C_4,    MI_As_3,    MI_G_3,    MI_E_3,    MI_C_3,    MI_Cs_4,       _______, _______, _______, MI_VELU},//
+                 {   _______,    _______,       _______,       _______,    MI2_As_1,   MI3_D_2, MI2_D_1,    MI4_F_2,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_0},//MI_TRNSU},//KC_PGDN },
+                 {   _______,    _______,      _______,     _______,      MI2_C_1,   MI3_E_1, MI2_G_1,    MI3_B_1,   MI2_D_1,   MI3_Fs_1,   MI2_Fs_1,     _______,    _______,    _______,      _______,      TRIKL_ALT_TGL},//MI2_OCTD  },
+                 {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+               },
+
+     [_BELOW]= { {   FUNC,_______,   MI_D_5,   MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,  MI_B_1,   MI_Cs_3,    _______,    MI_TRNSD},//MI_OCTD  },
+                 {   _______,   _______,  MI_E_5,   MI_C_5,  MI_G_4,    MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,    MI_E_2,  MI_Fs_3,            _______, _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                 {   _______,   _______,       MI_F_5,    MI_C_5,    MI_A_4,   MI_F_4,   MI_C_4,   MI_A_3,    MI_F_3,     MI_C_3,     MI_A_2,    MI_Ds_4,     _______, _______, _______, MI_VELD},//MI_TRNSD},//MI_TRNSD },
+                 {   _______,    _______,       _______,    _______,         MI2_D_1,    MI3_Fs_1, MI2_A_1,    MI3_Cs_2,   MI2_E_1,    MI3_Gs_1,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_5},//MI_TRNSU},//KC_PGDN },
+                 {   _______,    _______,      _______,     _______,    MI2_F_1,     MI3_A_1,  MI2_C_1,    MI3_E_1,    MI2_G_1,    MI3_B_1,   MI2_D_2,     _______,    _______,    _______,      _______,      TO(_MIDIALT)},//MI2_OCTD  },
+                 {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+              },
+/*HELIALT*/     [_MIDIALT] = { {   FUNC, _______,MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,    MI_Fs_2, MI_D_2, MI_Ds_3 ,       _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                 {   _______,  _______,  MI_B_4,   MI_A_4,    MI_F_4,     MI_D_4,   MI_B_3,    MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,  MI_G_2, MI_Gs_3,        _______, _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+                 {   _______,      _______,   MI_D_5,      MI_As_4,    MI_G_4,   MI_E_4,     MI_D_4,    MI_As_3,    MI_G_3,    MI_E_3,    MI_C_3,    MI_Cs_4,       _______, _______, _______, MI_VELU},//
+                 {   _______,    _______,       _______,       _______,    MI2_As_1,   MI3_D_2, MI2_D_1,    MI4_F_2,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_0},//MI_TRNSU},//KC_PGDN },
+                 {   _______,    _______,      _______,     _______,      MI2_C_1,   MI3_E_1, MI2_G_1,    MI3_B_1,   MI2_D_1,   MI3_Fs_1,   MI2_Fs_1,     _______,    _______,    _______,      _______,      TRIKL_ALT_TGL},//MI2_OCTD  },
+                 {   _______, _______,      _______,  _______,   _______,    _______, MOBELOWALT,    _______,    _______,     _______,   MOBELOWALT,    _______,    _______,     _______,    _______,      TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+               },
+
+     [_BELOWALT]= { {   FUNC,_______,  MI_D_5,   MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,  MI_B_1,   MI_Cs_3,    _______,    MI_TRNSD},//MI_OCTD  },
+                 {   _______,   _______,  MI_E_5,   MI_C_5,  MI_G_4,    MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,    MI_E_2,  MI_Fs_3,            _______, _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                 {   _______,   _______,       MI_F_5,    MI_C_5,    MI_A_4,   MI_F_4,   MI_C_4,   MI_A_3,    MI_F_3,     MI_C_3,     MI_A_2,    MI_Ds_4,     _______, _______, _______, MI_VELD},//MI_TRNSD},//MI_TRNSD },
+                 {   _______,    _______,       _______,    _______,         MI2_As_1,   MI3_D_2, MI2_A_1,    MI3_Cs_2,   MI2_E_1,    MI3_Gs_1,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_5},//MI_TRNSU},//KC_PGDN },
+                 {   _______,    _______,      _______,     _______,    MI2_F_1,     MI3_A_1,  MI2_C_1,    MI3_E_1,    MI2_G_1,    MI3_B_1,   MI2_D_2,     _______,    _______,    _______,      _______,      TO(_MIDI)},//MI2_OCTD  },
+                 {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+               },//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/*MEX34     [_MIDI] = { {   FUNC, _______,  MI_C_5,   MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,    MI_Ds_3,  _______ ,    _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                 {   _______,            MI_F_5,  MI_D_5,    MI_B_4,     MI_A_4,  MI_F_4,     MI_D_4,  MI_B_3,     MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,    MI_Gs_3, _______,    _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+                 {   _______,                  MI_G_5, MI_E_5, MI_D_5,   MI_As_4,   MI_G_4,   MI_E_4,   MI_D_4,    MI_As_3,    MI_G_3,    MI_E_3,    MI_Cs_4,    _______, _______, _______, MI2_OCTU},//
+                 {   _______,    _______,       _______,       _______,    MI2_Cs_1,    MI3_F_1, MI2_D_1,    MI4_F_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_3},//MI_TRNSU},//KC_PGDN },
+                 {   _______,    _______,      _______,     _______,      MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_D_1,    MI3_Fs_1,   _______,     _______,    _______,    _______,      _______,      MI_TRNS_0},//MI2_OCTD  },
+                 {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+               },
+
+     [_BELOW]= { {   FUNC,     _______,  MI_G_5, MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_Cs_3,     _______, _______,    MI_TRNSD},//MI_OCTD  },
+                 {   _______,       MI_C_6, MI_G_5,   MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_Fs_3,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                 {   _______,               MI_C_6, MI_A_5,  MI_F_5,   MI_C_5,   MI_A_4,   MI_F_4,   MI_C_4,    MI_A_3,    MI_F_3,    MI_C_3,      MI_Ds_4,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+                 {   _______,    _______,       _______,    _______,    MI2_Cs_1,    MI3_F_1, MI2_A_1,    MI3_Cs_1,   MI2_E_1,    MI3_Gs_1,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_5},//MI_TRNSU},//KC_PGDN },
+                 {   _______,    _______,      _______,     _______,    MI2_F_1,     MI3_A_1, MI2_C_1,    MI3_E_1,    MI2_G_1,    MI3_B_1,   _______,     _______,    _______,    _______,      _______,      TRIKL_DRUM_TGL},//MI2_OCTD  },
+                 {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_ALT_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+               },*///------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//     [_MIDI] = { {   FUNC, _______,      MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_Fs_2,    MI_Ds_3,    MI_Gs_2,     _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+//                 {   _______,     _______,      MI_B_4,     MI_A_4,  MI_F_4,     MI_D_4,  MI_B_3,     MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,     MI_Gs_3,    MI_Ds_4, _______,    _______,      MI_OCTD},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+//                 {   _______,               _______,  MI_D_5,   MI_As_4,   MI_G_4,   MI_E_4,   MI_D_4,    MI_As_3,    MI_G_3,    MI_E_3,  MI_D_3,  MI_Cs_4,    _______, _______, _______, MI2_OCTU},//
+//                 /*{   _______,               _______,  MI_Cs_5,   MI_As_4,   MI_Gs_4,   MI_Ds_4,   MI_Cs_4,    MI_As_3,    MI_Gs_3,    MI_Ds_3,    MI_Cs_3,    MI_As_2,    _______, _______, _______, MI2_OCTU},//*/
+//                 /*{   _______,               MI_E_5,   MI_D_5, MI_As_4,   MI_G_4,   MI_E_4,   MI_D_4,    MI_As_3,    MI_G_3,    MI_E_3,  MI_D_3,  MI_Ds_3,    MI_Gs_2, _______, _______, MI_BENDD},//MI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },*/
+//                 {   _______,    _______,       _______,       _______,    MI2_F_1,    MI3_A_1, MI2_D_1,    MI3_Fs_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_3},//MI_TRNSU},//KC_PGDN },
+//                 {   _______,    _______,      _______,     _______,    MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_E_1,    MI3_Gs_1,   _______,     _______,    _______,    _______,      _______,      MI_TRNS_0},//MI2_OCTD  },
+//                 {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,      TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+//               },
+
+//     [_BELOW]= { {   FUNC,     _______,  MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,     MI_Cs_3,    MI_As_2,    _______,    MI_TRNSD},//MI_OCTD  },
+//                 {   _______,     _______,      MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_As_3,    MI_Cs_4,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+//                 {   _______,               _______,  MI_F_5,   MI_C_5,   MI_A_4,   MI_F_4,   MI_C_4,    MI_A_3,    MI_F_3,    MI_C_3,    MI_A_2,    MI_Ds_4,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+//                 /*{   _______,               _______,  MI_Cs_5,   MI_As_4,   MI_Gs_4,   MI_Ds_4,   MI_Cs_4,    MI_As_3,    MI_Gs_3,    MI_Ds_3,    MI_Cs_3,    MI_As_2,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },*/
+//                 {   _______,    _______,       _______,       _______,    MI2_F_1,    MI3_A_1, MI2_D_1,    MI3_Fs_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,      _______,     _______,      TO(_MIDIALT)},//MI_TRNSU},//KC_PGDN },
+//                 {   _______,    _______,      _______,     _______,    MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_E_1,    MI3_Gs_1,   _______,     _______,    _______,    _______,      _______,      TRIKL_DRUM_TGL},//MI2_OCTD  },
+//                 {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_ALT_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
+//               },//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//   [_MIDIALT] = { {   FUNC, _______,      MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,     MI_Fs_2,    MI_Ds_3,    MI_Gs_2,     _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+//                 {   _______,     _______,      MI_B_4,     MI_A_4,  MI_F_4,     MI_D_4,  MI_B_3,     MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,     MI_Gs_3,    MI_Ds_4, _______,    _______,      MI_OCTD},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+//                 {   _______,               _______,  MI_D_5,   MI_As_4,   MI_G_4,   MI_E_4,   MI_D_4,    MI_As_3,    MI_G_3,    MI_E_3,  MI_D_3,  MI_Cs_4,    _______, _______, _______, MI2_OCTU},//
+//                  {   _______,    _______,       _______,       _______,    MI2_Bb_1,    MI3_D_1, MI2_D_1,    MI4_F_1,   MI2_A_1,    MI4_C_2,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_3},//MI_TRNSU},//KC_PGDN },
+//                 {   _______,    _______,      _______,     _______,    MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_D_1,    MI3_Fs_1,   _______,     _______,    _______,    _______,      _______,      MI_TRNS_0},//MI2_OCTD  },
+//                 {   _______,       _______,    _______,    _______,   _______,      _______,   MOBELOWALT, _______, _______,    _______,    MOBELOWALT, _______,    _______,    _______,    _______,      TRIKL_REG_TGL},//MI_TRNS_N2},//MI2_OCTU }
+//               },
+//    [_BELOWALT]= { {   FUNC,     _______,  MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_D_2,     MI_Cs_3,    MI_As_2,    _______,    MI_TRNSD},//MI_OCTD  },
+//                 {   _______,     _______,      MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_As_3,    MI_Cs_4,    _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+//                 {   _______,               _______,  MI_F_5,   MI_C_5,   MI_A_4,   MI_F_4,   MI_C_4,    MI_A_3,    MI_F_3,    MI_C_3,    MI_A_2,    MI_Ds_4,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+//                 {   _______,    _______,    _______,    _______, MI2_Bb_1,    MI3_D_1, MI2_A_1,    MI3_Cs_1,   MI2_E_1,    MI3_Gs_1,    _______,    _______,    _______,    _______,    _______,    TO(_MIDIALT)},//MI_TRNS_6},//MI_TRNSU },
+//                 {   _______,    _______,    _______,    _______, MI2_F_1,    MI3_A_1, MI2_C_1,    MI3_E_1,    MI2_G_1,    MI3_B_1,   _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//MI2_OCTD },
+//                 {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_ALT_TGL},//MI2_OCTU }
+//               },//------------
+	
+
+#elif defined(TRIKL_IX11CR_T)    
+    [_MIDI] = { {   FUNC,_______,    MI_Ds_5,     MI_C_5,   MI_A_4,  MI_Fs_4,     MI_Ds_4,    MI_C_4,   MI_A_3,    MI_Fs_3,    MI_Ds_3,    MI_C_3,   MI_A_2,  MI_Fs_2,   _______,               MI_TRNSU},//MI_OCTD  },
+                {   _______, _______,    MI_Cs_5,  MI_As_4,   MI_G_4,  MI_E_4,        MI_Cs_4,    MI_As_3,     MI_G_3,     MI_E_3,     MI_Cs_3,   MI_As_2,  MI_G_2, _______, _______,           MI_OCTU},//MI2_OCTD},//MI_OCTU  },
+                {   _______,         MI_D_5,     MI_B_4,   MI_Gs_4,   MI_F_4,     MI_D_4,     MI_B_3,    MI_Gs_3,   MI_F_3,    MI_D_3,    MI_B_2,    MI_Gs_2, MI_F_2, _______, _______,         MI2_OCTU},//MI_TRNSD},//MI_TRNSD },
+                {   _______,      MI2_Db_1,  MI2_Ab_1,   MI2_Eb_1,   MI2_Bb_1,   MI2_F_1,    MI2_C_1,    MI2_G_1,   MI2_D_1,    MI2_A_1,     MI2_E_1,    MI2_B_1,    _______, _______, _______, MI_BENDD},//TO(_MIDIDRUM)},//MI_TRNSU },
+                {   _______, _______,   MI3_F_2,  MI3_C_3,   MI3_G_2,   MI3_D_3,     MI3_A_2,   MI3_E_2,    MI3_B_2,    MI3_Fs_2,    MI3_Cs_3,    MI3_Gs_2,    MI3_Ds_3,   _______, _______,    MI_BENDU},//MI_TRNSD},//MI_TRNSD },
+                {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______,  TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },
+
+    [_BELOW]= { {   FUNC,_______,   MI_Ds_5,     MI_C_5,   MI_A_4,  MI_Fs_4,     MI_Ds_4,    MI_C_4,   MI_A_3,    MI_Fs_3,    MI_Ds_3,    MI_C_3,   MI_A_2,  MI_Fs_2,   _______,                MI_TRNSD},//MI_OCTD  },
+                {   _______, _______,    MI_Cs_5,  MI_As_4,   MI_G_4,  MI_E_4,        MI_Cs_4,    MI_As_3,     MI_G_3,     MI_E_3,     MI_Cs_3,   MI_As_2,  MI_G_2, _______, _______,           MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                {   _______,         MI_D_5,     MI_B_4,   MI_Gs_4,   MI_F_4,     MI_D_4,     MI_B_3,    MI_Gs_3,   MI_F_3,    MI_D_3,    MI_B_2,    MI_Gs_2, MI_F_2, _______, _______,         MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+                {   _______,      MI2_Db_1,  MI2_Ab_1,   MI2_Eb_1,   MI2_Bb_1,   MI2_F_1,    MI2_C_1,    MI2_G_1,   MI2_D_1,    MI2_A_1,     MI2_E_1,    MI2_B_1,    _______, _______, _______, MI_TRNS_0},//TO(_MIDIDRUM)},//MI_TRNSU },
+                {   _______, _______,   MI3_F_2,  MI3_C_3,   MI3_G_2,   MI3_D_3,     MI3_A_2,   MI3_E_2,    MI3_B_2,    MI3_Fs_2,    MI3_Cs_3,    MI3_Gs_2,    MI3_Ds_3,   _______, _______,    TRIKL_DRUM_TGL},//MI_TRNSD},//MI_TRNSD },
+                {   _______, _______,      _______,  _______,   _______,    _______, _______,    _______,    _______,     _______,   _______,    _______,    _______,     _______,    _______,  TRIKL_ALT_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#elif defined(TRIKL_IXLR_T)    
+    [_MIDI] = { {   FUNC,_______,  MI_Fs_5,  MI_Ds_5,     MI_C_5,   MI_A_4,  MI_Fs_4,     MI_Ds_4,    MI_C_4,     MI_A_3,     MI_Fs_3,     MI_Ds_3,     MI_C_3,    MI_A_2,    _______,         MI_TRNSU},//MI_OCTD  },
+                {   _______,     MI_G_5,    MI_E_5,    MI_Cs_5,  MI_As_4,   MI_G_4,  MI_E_4,   MI_Cs_4,    MI_As_3,     MI_G_3,     MI_E_3,     MI_Cs_3,    MI_As_2,    MI_G_2,  _______,      MI_OCTU},//MI2_OCTD},//MI_OCTU  },
+                {   _______,        MI_F_5,  MI_D_5, MI_B_4,   MI_Gs_4,   MI_F_4,   MI_D_4,    MI_B_3,    MI_Gs_3,    MI_F_3,    MI_D_3,    MI_B_2,    MI_Gs_2, _______, _______,              MI_TRNS_0},//MI_TRNSD},//MI_TRNSD },
+                {   _______,              MI_Ds_5,  MI_C_5,   MI_A_4,   MI_Fs_4,   MI_Ds_4, MI_C_4,    MI_A_3,   MI_Fs_3,    MI_Ds_3,     MI_C_3,    MI_A_2,    _______, _______, _______,     MI_BENDD},//TO(_MIDIDRUM)},//MI_TRNSU },
+                {   _______, _______,          MI_Cs_5, MI_As_4,   MI_G_4,  MI_E_4,   MI_Cs_4,    MI_As_3,   MI_G_3,     MI_E_3,     MI_Cs_3,    MI_As_2,    _______,   _______, _______,      MI_BENDU},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______, _______,      _______,  _______,   _______,    _______, MOBELOW,    _______,    _______,     _______,   MOBELOW,    _______,    _______,     _______,    _______, TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },
+
+    [_BELOW]= { {   FUNC,_______,  MI_Fs_5,  MI_Ds_5,     MI_C_5,   MI_A_4,  MI_Fs_4,     MI_Ds_4,    MI_C_4,     MI_A_3,     MI_Fs_3,     MI_Ds_3,     MI_C_3,    MI_A_2,    _______,         MI_TRNSD},//MI_OCTD  },
+                {   _______,     MI_G_5,    MI_E_5,    MI_Cs_5,  MI_As_4,   MI_G_4,  MI_E_4,   MI_Cs_4,    MI_As_3,     MI_G_3,     MI_E_3,     MI_Cs_3,    MI_As_2,    MI_G_2,  _______,      MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                {   _______,        MI_F_5,  MI_D_5, MI_B_4,   MI_Gs_4,   MI_F_4,   MI_D_4,    MI_B_3,    MI_Gs_3,    MI_F_3,    MI_D_3,    MI_B_2,    MI_Gs_2, _______, _______,              TG(_MIDIDRUM)},//MI_TRNSD},//MI_TRNSD },
+                {   _______,              MI_Ds_5,  MI_C_5,   MI_A_4,   MI_Fs_4,   MI_Ds_4, MI_C_4,    MI_A_3,   MI_Fs_3,    MI_Ds_3,     MI_C_3,    MI_A_2,    _______, _______, _______,     MI_BENDD},//TO(_MIDIDRUM)},//MI_TRNSU },
+                {   _______, _______,          MI_Cs_5, MI_As_4,   MI_G_4,  MI_E_4,   MI_Cs_4,    MI_As_3,   MI_G_3,     MI_E_3,     MI_Cs_3,    MI_As_2,    _______, _______, _______,        MI_BENDU},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   _______, _______,      _______,  _______,   _______,    _______, _______,    _______,    _______,     _______,   _______,    _______,    _______,     _______,    _______, TRIKL_ALT_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },
+              
+#elif defined(TRIKL_IXLL_T)    
+    [_MIDI] = { {      MI5_F_2, _______, MI5_C_3,  MI5_G_2,   MI5_D_3,   MI5_A_2,   MI5_E_2,    MI5_B_2,    MI5_Fs_2,    MI5_Cs_3,    MI5_Gs_2,    MI5_Ds_3,    MI5_As_2,  _______,    _______,    MI2_OCTU},//MI_OCTD  },
+                {   _______,     MI4_E_2,  MI4_B_2, MI4_Gb_2,  MI4_Db_3,   MI4_Ab_2,  MI4_Eb_2,   MI4_Bb_2,    MI4_F_2,     MI4_C_3,     MI4_G_2,     MI4_D_3,    MI4_A_2,    _______,  _______,    MI2_OCTD},//MI2_OCTD},//MI_OCTU  },
+                {   _______,        MI3_F_2,  MI3_C_3, MI3_G_2,   MI3_D_3,   MI3_A_2,   MI3_E_2,    MI3_B_2,    MI3_Fs_2,    MI3_Cs_3,    MI3_Gs_2,    MI3_Ds_3,    MI3_As_2, _______, _______, MI_BENDU},//MI_TRNSD},//MI_TRNSD },
+                {   _______,              MI2_Db_1,  MI2_Ab_1,   MI2_Eb_1,   MI2_Bb_1,   MI2_F_1, MI2_C_1,    MI2_G_1,   MI2_D_1,    MI2_A_1,     MI2_E_1,    MI2_B_1,    MI2_Fs_1, _______, _______, MI_BENDD},//TO(_MIDIDRUM)},//MI_TRNSU },
+                {   _______, _______,          MI2_F_1, MI2_C_1,   MI2_G_1,  MI2_D_1,   MI2_A_1,    MI2_E_1,   MI2_B_1,     MI2_Fs_1,     MI2_Cs_1,    MI2_Gs_1,    MI2_Ds_1,   MI2_As_1, _______, TRIKL_DRUM_TGL},//TRIKL_ALT_TGL},//MI2_OCTD },
+                {   FUNC,    _______,      _______,  _______,   _______,    _______, _______,    _______,    _______,     _______,   _______,    _______,    _______,     _______,    _______,      TRIKL_ALT_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },
+	
+  #endif //IX10 or IX11 or IXLR or IXLL
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	[_MIDIDRUM] = { {  FUNC,     _______,      MI_B_2,     MI_G_2, MI_E_2,     MI_Cs_2,  MI_As_1,     MI_Fs_1,    MI_C_2,     MI_A_1,     MI_F_1,     MI_Ds_1,    MI_Cs_1,    MI_B_0,    _______,    MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                {   _______,     _______,     MI_A_2,     MI_F_2,  MI_Ds_2,     MI_Fs_2,  MI_Gs_1,     MI_D_2,     MI_B_1,     MI_G_1,     MI_Gs_2,     MI_D_1,    MI_C_1,    _______,    _______,      MI_OCTU},//MI2_OCTU},//MI_OCTU},//KC_HOME },
+                {   _______,      _______,    _______,    _______,  _______,   _______, _______,    _______,   _______,    _______,    _______,      _______,      _______,      _______, _______,      MI2_OCTU},//MI_TRNSU},//MI_TRNSD},//KC_PGUP },
+                {   _______,    _______,       _______,       _______,    _______,    _______, _______,    _______,   _______,    _______,    _______,    _______,    _______,      _______,     _______,      TG(_MIDIDRUM)},//MI_TRNSU},//KC_PGDN },
+                {   _______,    _______,      _______,     _______,    _______,    _______, _______,    _______,    _______,    _______,   _______,     _______,    _______,    _______,      _______,      TRIKL_ALT_TGL},//MI2_OCTD  },
+                {   _______,       _______,    _______,    _______,   _______,      _______,   MOBELOWDRUM, _______, _______,    _______,    MOBELOWDRUM, _______,    _______,    _______,    _______,      TRIKL_REG_TGL},//MI_TRNS_N2},//MI2_OCTU }
+              },
+    [_BELOWDRUM]= { {FUNC,    _______,      _______,     _______, _______,     _______,  _______,     _______,    _______,     _______,     _______,     _______,    _______,    _______,    _______,    MI_TRNSD},//MI_OCTD  },
+                {   _______,    _______,    _______,     _______,  _______,     _______,  _______,     _______,     _______,     _______,     _______,     _______,    _______,    _______,    _______,   MI_OCTD},//MI2_OCTD},//MI_OCTU  },
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,    _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    MI_VELU},//MI_TRNS_6},//MI_TRNSU },
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,    _______,    _______,    _______,   _______,    _______,    _______,    _______,    _______,    MI_VELD},//MI2_OCTD },
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//MI2_OCTU }
+              },//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#endif //MIDI
+    [_BASE] = { {   FUNC,     _______,       KC_F1,      KC_F2,   KC_F3,      KC_F4,   KC_F5,     KC_F6,      KC_F7,      KC_F8,      KC_F9,      KC_F10,     KC_F11,     KC_F12,     _______,    KC_DEL  },
+                {   _______,          KC_1,       KC_2,       KC_3,    KC_4,       KC_5,    KC_6,      KC_7,       KC_8,       KC_9,       KC_0,       KC_MINS,    KC_EQL,     _______,      _______,    KC_HOME },
+                {   _______,   _______,       _______,      _______,   _______,      _______,   _______,     _______,      _______,      _______,      _______,      _______,      _______,      _______,      _______,    KC_PGUP },
+                {   _______,   _______,       _______,      _______,   KC_F,       KC_G,    KC_H,      KC_J,       KC_K,       KC_L,       _______,      _______,      _______,      _______,      _______,    KC_PGDN },
+                {   _______,   _______,       _______,      _______,   KC_C,       KC_V,    KC_B,      KC_N,       KC_M,       KC_COMM,    _______,      _______,      _______,      _______,      _______,    KC_END  },
+                {   _______,   _______,       _______,      _______,   _______,      _______,   KC_SPC,    _______,      _______,      _______,      KC_RALT,    _______,      _______,      _______,      _______,    KC_RGHT },
+              },
+    [_FN]   = { {   _______,    _______,    _______,    _______, _______, _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    FUNC2,    TG(_BASE)  },//RESET},//EEPROM_RESET,
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______},//TG(_MIDI)},
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    RGB_VAI },//RGB_TOG },//on/off RGB
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    RGB_MOD },//RGB effect change
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    RGB_SAI },//SATURATION
+                {   _______,    _______,    _______,    _______, _______,    _______, FUNC2,   _______,    _______,    _______,    FUNC2,    _______,    _______,    _______,    _______,    RGB_HUI }//HUE
+             },
+    [_FN2]   = { {   _______,    _______,    _______,    _______, _______, _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    QK_RESET,    TG(_BASE)  },//RESET},//EEPROM_RESET,
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______},//RGB_TOG},//TG(_MIDI)},
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    RGB_VAD },//RGB_TOG },//on/off RGB
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    RGB_RMOD },//RGB effect change reverse
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    RGB_SAD },//SATURATION
+                {   _______,    _______,    _______,    _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    RGB_HUD }//HUE
              }
 };
+
+
+uint8_t below_press_num = 0;
+uint8_t rgb_matrix_current_mode = 0;
+bool bass_mute = 0;
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {
+	  //TODO, when going to MIDIALT make sure to set off BELOW??
+    case MI_TRNSU:
+    case MI_TRNSD:
+    case MI_OCTU:
+    case MI_OCTD:
+    case MI2_OCTD:
+    case MI2_OCTU:
+		if (record->event.pressed) {
+    //return true;  
+    //}else{
+		  for (uint8_t i = 0; i < 5; i++) {//release first 5 rows (0 to 4)
+     	  raw_matrix[i] &= (MATRIX_ROW_SHIFTER << (MATRIX_COLS-1)); //Clear all except conf buttons (last column)
+      //TODO konf botoia ez! or bat in bere burukin ta 0a jarri beharreko bitakin
+			//last_matrix[i] = 0;//TODO test without this//set to previously 0, so durin next check when it sees it at '1' will send noteon
+			//matrix[i] = 0;//TODO: proatxen hau ta aurrekoa kenduta
+		  }	       
+      //return true;  
+     }
+    return true; 
+     
+  
+    case BASS_MUTE: 
+        if (record->event.pressed) {
+          if (bass_mute == 1) {
+            bass_mute = 0;
+          } else {
+            bass_mute = 1;
+          }
+        }
+      return false;
+    
+    case PANIKO:
+      process_midi_all_notes_off();
+    return false;
+        
+    case FUNC:
+		if (record->event.pressed) {
+		    layer_on(_FN);
+		} else {
+		    layer_off(_FN);
+		    layer_off(_FN2);
+		}
+		return false;//don't send hid report!
+	    
+    case FUNC2:
+		if (record->event.pressed) {
+		    layer_on(_FN2);
+		} else {
+		    layer_off(_FN2);
+		}
+		return false;//don't send hid report!
+    
+	#if defined(MIDI_TRIKL) 
+    case MOBELOW:
+		if (record->event.pressed) {
+			below_press_num++;
+			if (below_press_num == 2)
+		      return false;//if it is the 2nd press don't release notes again, and layer must be already on (TODO: no harm in setting layer on again anyway?)
+		    layer_on(_BELOW);
+		} else {//depressed
+			below_press_num--;
+			if (below_press_num == 0) //both depressed -> release notes
+		      layer_off(_BELOW);
+			else //if still 1 pressed don't release notes
+			  return false;
+		}
+	//both, when pressing and when releasing
+		///for (uint8_t i = 0; i <= 2; i++) {//release first 3 rows to silence playing notes (keep bass)
+		for (uint8_t i = 0; i <= 4; i++) {//release first 5 rows to silence playing notes
+			raw_matrix[i] = 0;//TODO konf botoia ez! or bat in bere burukin ta 0a jarri beharreko bitakin
+			//last_matrix[i] = 0;//TODO test without this//set to previously 0, so durin next check when it sees it at '1' will send noteon
+			//matrix[i] = 0;//TODO: proatxen hau ta aurrekoa kenduta
+		}
+		return false;//don't send hid report!
+		
+    case MOBELOWALT:
+		if (record->event.pressed) {
+		    layer_on(_BELOWALT);
+			below_press_num++;
+			if (below_press_num == 2)
+		      return false;//if 2nd press don't release notes
+		} else {//depressed
+			below_press_num--;
+			if (below_press_num == 0) //fully depressed
+		      layer_off(_BELOWALT);
+			else //if still 1 pressed don't release notes
+			  return false;
+		}
+	//both, when pressing and when releasing
+		for (uint8_t i = 0; i <= 4; i++) {//release first 5 rows
+			raw_matrix[i] = 0;//TODO konf botoia ez! or bat in bere burukin ta 0a jarri beharreko bitakin
+			//last_matrix[i] = 0;//TODO test without this//set to previously 0, so durin next check when it sees it at '1' will send noteon
+			//matrix[i] = 0;//TODO: proatxen hau ta aurrekoa kenduta
+		}
+		return false;//don't send hid report!
+				
+    case MOBELOWDRUM:
+		if (record->event.pressed) {
+		    layer_on(_BELOWDRUM);
+			below_press_num++;
+			if (below_press_num == 2)
+		      return false;//if 2nd press don't release notes
+		} else {//depressed
+			below_press_num--;
+			if (below_press_num == 0) //fully depressed
+		      layer_off(_BELOWDRUM);
+			else //if still 1 pressed don't release notes
+			  return false;
+		}
+	//both, when pressing and when releasing
+		for (uint8_t i = 0; i <= 4; i++) {//release first 5 rows
+			raw_matrix[i] = 0;//TODO konf botoia ez! or bat in bere burukin ta 0a jarri beharreko bitakin
+			//last_matrix[i] = 0;//TODO test without this//set to previously 0, so durin next check when it sees it at '1' will send noteon
+			//matrix[i] = 0;//TODO: proatxen hau ta aurrekoa kenduta
+		}
+		return false;//don't send hid report!
+	    
+	case TG(_MIDI) :// default is KB MODE, move to MIDI
+	    //if (record->event->key.row=2 && record->event->key.column=15) {
+			if (record->event.pressed) {
+				//TODO testing base/midi switch from/to midialt: already taken into account MIDIALT -> another option was to use default_layer_set(layer_mask)
+				if (layer_state_is(_MIDI)) {//if midi is enabled, it is about to be disabled, so turn LED off
+					writePin(LED_CAPS_LOCK_PIN, 1);//LED Off = KB mode
+					rgb_matrix_current_mode = rgb_matrix_get_mode();
+          #if defined TRIKL_RGB
+  					rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_TRIKL_SOLID);//TRIKL_SOLID
+          #endif
+				} else {//moving to MIDI mode
+					writePin(LED_CAPS_LOCK_PIN, 0);//LED on = MIDI mode
+          #if defined TRIKL_RGB
+            rgb_matrix_mode_noeeprom(rgb_matrix_current_mode);//Restore previous lighting mode
+          #endif
+					//rgb_matrix_disable_noeeprom()	)//TODO: Turn off LED effects to allow raw messages, or maybe set some custom lighting with only non-playing leds on
+				}
+			}
+		//}
+		return true;
+ case TG(_MIDIDRUM) :
+			if (record->event.pressed) { // TODO FIXME, if in bellow change to MIDIDRUM BELLOW, so that without needing to realease the bellow the functions are the expected ones
+				if (layer_state_is(_MIDI) || layer_state_is(_BELOW)) {//if midi is enabled, it is about to be disabled
+          enter_drum_mode(1);
+				} else {//moving to MIDI mode
+          enter_drum_mode(0);
+				}
+			}
+		//}
+		return true;
+		#endif //MIDI
+	case TG(_BASE) ://default is MIDI, move to KB MODE
+	    //if (record->event->key.row=2 && record->event->key.column=15) {
+			if (record->event.pressed) {
+				//TODO testing base/midi switch from/to midialt: already taken into account MIDIALT -> another option was to use default_layer_set(layer_mask)
+				if (layer_state_is(_BASE)) {//if base is enabled, it is about to be disabled, so turn LED off
+					writePin(LED_CAPS_LOCK_PIN, 1);
+          #if defined TRIKL_RGB
+            rgb_matrix_mode_noeeprom(rgb_matrix_current_mode);//Restore previous lighting mode
+          #endif
+				} else {//moving to BASE mode
+					rgb_matrix_current_mode = rgb_matrix_get_mode();
+          #if defined TRIKL_RGB
+  					rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_TRIKL_SOLID);//set TRIKL_SOLID
+          #endif
+					writePin(LED_CAPS_LOCK_PIN, 0);//led on=kb mode
+					//rgb_matrix_disable_noeeprom()	)//TODO: Turn off LED effects to allow raw messages, or maybe set some custom lighting with only non-playing leds on
+				}
+			}
+		//}
+		return true;
+  }
+  return true;
+}
+
+void keyboard_post_init_user(void) {
+#ifndef MIDI_TRIKL //if basic trikeyboard -> CAPS LED always ON
+	writePin(LED_CAPS_LOCK_PIN, 0);//led on=kb mode  //TODO: basikoa argikin bada re in ber du!
+#endif
+
+#ifdef INIT_AS_KB // if it is desired to start at keyboard mode
+ layer_on(_BASE);
+ layer_off(_MIDI);
+	writePin(LED_CAPS_LOCK_PIN, 0);//led on=kb mode  
+#endif
+  // Customise these values to desired behaviour
+  //debug_enable=true;
+  //debug_matrix=true;
+  //debug_keyboard=true;
+  //debug_mouse=true;
+}
+
+/*extern rgb_config_t rgb_matrix_config;*/
+extern midi_config_t   midi_config;//right
+	int8_t transpose_z = 20;//initial bad value to force rgb refresh 
+	RGB rgb = {0, 0, 0};
+  
+void rgb_matrix_indicators_user() {
+	if (midi_config.transpose != transpose_z) {
+		transpose_z = midi_config.transpose;
+		switch (midi_config.transpose) {
+			//TODO, hau traspose ittean lekun in ta RGB bariablea izan deila bakarrik globala, hemendik soilik leda eguneratu
+		//for (uint8_t i = 0;  i <= 12; i++) {
+		  //switch (i-6) {
+			case 0: //sol 296
+			  rgb.r = 255;
+			  rgb.g = 96;//roxa argittu moretik bereizteko
+			  rgb.b = 128;
+			  break;
+			case 1: //sol# 300
+			  rgb.r = 255;
+			  rgb.g = 0;
+			  rgb.b = 64;
+			  break;
+			case 2: //la 355
+			  rgb.r = 255;
+			  rgb.g = 0;
+			  rgb.b = 0;
+			  break;
+			case 3: //SIb 40
+			  rgb.r = 255;
+			  rgb.g = 64;
+			  rgb.b = 0;
+			  break;
+			case 4: //Si 55 salto txikie baiio nahiko ondo bereiztea!
+			  rgb.r = 255;
+			  rgb.g = 196;
+			  rgb.b = 0;
+			  break;
+			case 5: //Do 75// salto haundixoa komeni
+			  rgb.r = 128;
+			  rgb.g = 255;
+			  rgb.b = 0;
+			  break;
+			case 6: //Do# //140
+			case -6: //Do#
+			  rgb.r = 0;
+			  rgb.g = 255;//140
+			  rgb.b = 0;
+			  break;
+			case 7: //Re
+			case -5: //Re 185
+			  rgb.r = 0;
+			  rgb.g = 255;
+			  rgb.b = 64;
+			  break;
+			case -4: //Re# 185
+			  rgb.r = 96;
+			  rgb.g = 255;
+			  rgb.b = 255;
+			  break;
+			case -3: //Mi 190
+			  rgb.r = 0;
+			  rgb.g = 140;
+			  rgb.b = 255;
+			  break;
+			case -2: //Fa 210
+			  rgb.r = 0;
+			  rgb.g = 0;
+			  rgb.b = 255;
+			  break;
+			case -1: //Fa# 260
+			  rgb.r = 96;
+			  rgb.g = 0;
+			  rgb.b = 255;
+			  break;
+			  
+			default:
+			  rgb.r = 255;
+			  rgb.g = 255;
+			  rgb.b = 255;
+			  break;
+		  }
+		}
+    //rgb_matrix_set_color(i,rgb.r, rgb.g, rgb.b);
+	//}
+	
+	///set transpose button with proper color
+  
+#if defined(MIDI_ADVANCED) //BASIC doesn't need to report tonality
+    rgb_matrix_set_color(TRANS_BUT_NUM,rgb.r, rgb.g, rgb.b);
+#endif
+	//if (IS_LAYER_ON(_BASE)) {//TODO: MIDIALT/MIDIALTBELOW moden Konf argikk gorriz sobreskribittu?
+     //TODO: for x check the table and turn leds accordingly
+	    /*if(rgb_matrix_get_mode()==RGB_MATRIX_CUSTOM_TRIKL_SOLID){
+			for (uint8_t i = 0;  i < DRIVER_LED_TOTAL; i++) {
+				//if (LED_OVERRIDES[i] == 1){
+					//r1        r2                   r3                  r4                  r5=space
+				if ((i<=12) || (i>=17 && i<=27) || (i>=49 && i<=54) || (i>=62 && i<=67) || (i==76)) {
+					rgb_matrix_set_color(i, LED_OVERRIDES[i].R, LED_OVERRIDES[i].G, LED_OVERRIDES[i].B);
+				} else {
+					RGB rgb = hsv_to_rgb(rgb_matrix_config.hsv);
+					rgb_matrix_set_color(i, rgb.r, rgb.g, rgb.b);
+				//rgb_matrix_set_color(i, 0, 0, 0);
+				}
+			}
+		}*/
+	//}
+}

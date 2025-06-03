@@ -28,6 +28,8 @@
 #include <ch.h>
 #include <hal.h>
 #include <string.h>
+#include "print.h"
+#include "process_midi.h"
 
 #include "usb_main.h"
 
@@ -42,6 +44,11 @@
 #include "usb_device_state.h"
 #include "usb_descriptor.h"
 #include "usb_driver.h"
+
+
+#  ifdef RGB_MATRIX_ENABLE
+#    include "rgb_matrix.h"
+#  endif
 
 #ifdef NKRO_ENABLE
 #    include "keycode_config.h"
@@ -1053,6 +1060,8 @@ void console_task(void) {
 #endif /* CONSOLE_ENABLE */
 
 #ifdef RAW_ENABLE
+
+#  if RAW_IN_CAPACITY > 0 //defined as non zero
 void raw_hid_send(uint8_t *data, uint8_t length) {
     // TODO: implement variable size packet
     if (length != RAW_EPSIZE) {
@@ -1060,7 +1069,7 @@ void raw_hid_send(uint8_t *data, uint8_t length) {
     }
     chnWrite(&drivers.raw_driver.driver, data, length);
 }
-
+#  endif
 __attribute__((weak)) void raw_hid_receive(uint8_t *data, uint8_t length) {
     // Users should #include "raw_hid.h" in their own code
     // and implement this function there. Leave this as weak linkage
@@ -1082,20 +1091,106 @@ void raw_hid_task(void) {
 
 #ifdef MIDI_ENABLE
 
+struct MYLED LED_OVERRIDES[DRIVER_LED_TOTAL] = {0};
 void send_midi_packet(MIDI_EventPacket_t *event) { chnWrite(&drivers.midi_driver.driver, (uint8_t *)event, sizeof(MIDI_EventPacket_t)); }
 
 bool recv_midi_packet(MIDI_EventPacket_t *const event) {
     size_t size = chnReadTimeout(&drivers.midi_driver.driver, (uint8_t *)event, sizeof(MIDI_EventPacket_t), TIME_IMMEDIATE);
+	
+		             if (size > 0) {
+						 /*LED_OVERRIDES[0].B = event->Event&0xF0;
+						 if (event->Event == 0x8) LED_OVERRIDES[0].G = 255;
+						 if (event->Event == 0x80) LED_OVERRIDES[1].G = 255;
+						 if (event->Event == 0x9) LED_OVERRIDES[0].R = 255;
+						 if (event->Event == 0x90) LED_OVERRIDES[1].R = 255;
+						 LED_OVERRIDES[2].B = LED_OVERRIDES[2].B+64;
+						 LED_OVERRIDES[3].R = event->Event&0x0F;//seruruna 8 eo 9
+						 LED_OVERRIDES[4].G = event->Data2;
+						 LED_OVERRIDES[5].G = event->Data3;//velocity
+						 LED_OVERRIDES[6].G = event->Data1;
+						 LED_OVERRIDES[7].B = LED_OVERRIDES[8].B+1;*/
+						 //if (size > 0) {
+						 if (event->Event == 0x9) { //noteon
+							 if ((event->Data1 & 0x0F) == 0) {//channel 0, opening bellow, red
+								 LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].R = 255;//event->Data3;
+								 LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].G = 0;
+							 } else {//closing below green
+								LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].G = 255;//event->Data3;
+								LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].R = 0;
+							 }
+						 } else if (event->Event == 0x8) {	//noteoff						 
+							 LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].R = 0;
+							 LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].G = 0;
+						 
+						 } else if (event->Event == 0xB) {	//all off
+						    for (int i = 0; i<DRIVER_LED_TOTAL; i++) {
+								LED_OVERRIDES[i].R = 0;
+								LED_OVERRIDES[i].G = 0;
+								LED_OVERRIDES[i].B = 0;
+							}
+						 } /*else {//other kind of midi message received
+							 //LED_OVERRIDES[13].R = LED_OVERRIDES[0].R + 64;//bestelako midi mensajekin gorrie 
+						 }*/
+						 //LED_OVERRIDES[0].B = LED_OVERRIDES[0].B + 64; //zeoze jasotzean bakoitzen urdin intensidadea kanbiatu
+					 }
     return size == sizeof(MIDI_EventPacket_t);
 }
+
 void midi_ep_task(void) {
     uint8_t buffer[MIDI_STREAM_EPSIZE];
     size_t  size = 0;
     do {
-        size_t size = chnReadTimeout(&drivers.midi_driver.driver, buffer, sizeof(buffer), TIME_IMMEDIATE);
-        if (size > 0) {
+		//MIDI_EventPacket_t event;
+		size = chnReadTimeout(&drivers.midi_driver.driver, buffer, sizeof(buffer), TIME_IMMEDIATE);
+
+        //size = recv_midi_packet(&event);//chnReadTimeout(&drivers.midi_driver.driver, buffer, sizeof(buffer), TIME_IMMEDIATE);
+        
+		if (size > 0) {
             MIDI_EventPacket_t event;
             recv_midi_packet(&event);
+            //////////////////////////MIDI_EventPacket_t event;
+            /////////////////////////recv_midi_packet(&event);
+			//XAM hemen dettu berko litzeke funtzio bati jasotako mezun arabera argik kontrolatzettuna. event jasoko luke, eo igual zuzenen event.Data1 event-Data2 ta event.Data3
+			//rgb_matrix_disable_noeeprom();//XAM debug: check if it is receiving from STB, if it does it will disable leds!
+			//turn on LED in row data1 and col data2 with color Data3
+		     //LED_OVERRIDES[0][6]=1;//rgb_matrix_set_color(event.Data3, 255, 0, 0);
+			 //TODO: 
+			 //if (event.Event == MIDI_EVENT(0, MIDI_COMMAND_NOTE_ON)) {
+				 
+        //uint8_t row = i % MATRIX_ROWS;
+        //uint8_t col = i / MATRIX_ROWS;
+				 //if ((event.Data1 % (DRIVER_LED_TOTAL-1)) < DRIVER_LED_TOTAL) {
+					 
+		             /*LED_OVERRIDES[3].R = buffer[0];
+		             LED_OVERRIDES[3].G = buffer[1];
+		             LED_OVERRIDES[3].B = buffer[2];
+		             LED_OVERRIDES[4].R = buffer[3];
+		             LED_OVERRIDES[4].G = buffer[4];
+		             LED_OVERRIDES[4].B = buffer[5];
+		             LED_OVERRIDES[5].R = buffer[6];
+		             LED_OVERRIDES[5].G = buffer[7];
+		             LED_OVERRIDES[5].B = buffer[8];
+		             LED_OVERRIDES[6].R = buffer[9];
+		             LED_OVERRIDES[6].G = buffer[10];
+		             LED_OVERRIDES[6].B = buffer[11];*/
+		             /*LED_OVERRIDES[7].R = buffer[10];
+		             LED_OVERRIDES[7].G = buffer[11];
+		             LED_OVERRIDES[7].B = buffer[12];
+		             LED_OVERRIDES[8].R = buffer[13];
+		             LED_OVERRIDES[8].G = buffer[14];
+		             LED_OVERRIDES[8].B = buffer[15];
+		             LED_OVERRIDES[9].R = buffer[16];
+		             LED_OVERRIDES[9].G = buffer[17];
+		             LED_OVERRIDES[9].B = buffer[18];
+		             LED_OVERRIDES[10].R = buffer[19];
+		             LED_OVERRIDES[11].G = buffer[20];
+		             LED_OVERRIDES[12].B = buffer[21];*/
+					 
+				 //}//rgb_matrix_set_color(event.Data3, 255, 0, 0);
+				 //Channel %d,               Pitch %d, Velocity 
+				 //(MIDIEvent.Data1 & 0x0F   Data2     Data3
+			 //}
+			//TODO: keep track of all pressed buttons, and when bellow switch, change color of pressed buttons
         }
     } while (size > 0);
 }

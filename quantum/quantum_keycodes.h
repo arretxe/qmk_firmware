@@ -142,23 +142,23 @@ enum quantum_keycodes {
     MI_OFF,  // 5C2D
     MI_TOG,  // 5C2E
 
-    MI_C,   // 5C2F
-    MI_Cs,  // 5C30
-    MI_Db = MI_Cs,
-    MI_D,   // 5C31
-    MI_Ds,  // 5C32
-    MI_Eb = MI_Ds,
-    MI_E,   // 5C33
-    MI_F,   // 5C34
-    MI_Fs,  // 5C35
-    MI_Gb = MI_Fs,
-    MI_G,   // 5C36
-    MI_Gs,  // 5C37
-    MI_Ab = MI_Gs,
-    MI_A,   // 5C38
-    MI_As,  // 5C39
-    MI_Bb = MI_As,
-    MI_B,  // 5C3A
+    MI_C_0,   // 5C2F
+    MI_Cs_0,  // 5C30
+    MI_Db_0 = MI_Cs_0,
+    MI_D_0,   // 5C31
+    MI_Ds_0,  // 5C32
+    MI_Eb_0 = MI_Ds_0,
+    MI_E_0,   // 5C33
+    MI_F_0,   // 5C34
+    MI_Fs_0,  // 5C35
+    MI_Gb_0 = MI_Fs_0,
+    MI_G_0,   // 5C36
+    MI_Gs_0,  // 5C37
+    MI_Ab_0 = MI_Gs_0,
+    MI_A_0,   // 5C38
+    MI_As_0,  // 5C39
+    MI_Bb_0 = MI_As_0,
+    MI_B_0,  // 5C3A
 
     MI_C_1,   // 5C3B
     MI_Cs_1,  // 5C3C
@@ -249,7 +249,7 @@ enum quantum_keycodes {
     MI_As_5,  // 5C75
     MI_Bb_5 = MI_As_5,
     MI_B_5,  // 5C76
-
+    MI_C_6,  //XAM 
     MI_OCT_N2,  // 5C77
     MI_OCT_N1,  // 5C78
     MI_OCT_0,   // 5C79
@@ -276,6 +276,8 @@ enum quantum_keycodes {
     MI_TRNS_4,   // 5C8D
     MI_TRNS_5,   // 5C8E
     MI_TRNS_6,   // 5C8F
+    MI_TRNS_7,   // XAM
+    MI_TRNS_8,   // XAM
     MI_TRNSD,    // 5C90
     MI_TRNSU,    // 5C91
 
@@ -598,7 +600,462 @@ enum quantum_keycodes {
     MACRO_31,
 
     // Start of custom keycode range for keyboards and keymaps - always leave at the end
-    SAFE_RANGE
+    //SAFE_RANGE,
+	//MI_TRNS_7,//7 jarri sol 0 danez goiko reaino aiatzeko
+	    // MIDI additionals 2
+    MI2_C_0,   // 5C2F
+    MI2_Cs_0,  // 5C30
+    MI2_Db_0 = MI2_Cs_0,
+    MI2_D_0,   // 5C31
+    MI2_Ds_0,  // 5C32
+    MI2_Eb_0 = MI2_Ds_0,
+    MI2_E_0,   // 5C33
+    MI2_F_0,   // 5C34
+    MI2_Fs_0,  // 5C35
+    MI2_Gb_0 = MI2_Fs_0,
+    MI2_G_0,   // 5C36
+    MI2_Gs_0,  // 5C37
+    MI2_Ab_0 = MI2_Gs_0,
+    MI2_A_0,   // 5C38
+    MI2_As_0,  // 5C39
+    MI2_Bb_0 = MI2_As_0,
+    MI2_B_0,  // 5C3A
+
+    MI2_C_1,   // 5C3B
+    MI2_Cs_1,  // 5C3C
+    MI2_Db_1 = MI2_Cs_1,
+    MI2_D_1,   // 5C3D
+    MI2_Ds_1,  // 5C3E
+    MI2_Eb_1 = MI2_Ds_1,
+    MI2_E_1,   // 5C3F
+    MI2_F_1,   // 5C40
+    MI2_Fs_1,  // 5C41
+    MI2_Gb_1 = MI2_Fs_1,
+    MI2_G_1,   // 5C42
+    MI2_Gs_1,  // 5C43
+    MI2_Ab_1 = MI2_Gs_1,
+    MI2_A_1,   // 5C44
+    MI2_As_1,  // 5C45
+    MI2_Bb_1 = MI2_As_1,
+    MI2_B_1,  // 5C46
+
+    MI2_C_2,   // 5C47
+    MI2_Cs_2,  // 5C48
+    MI2_Db_2 = MI2_Cs_2,
+    MI2_D_2,   // 5C49
+    MI2_Ds_2,  // 5C4A
+    MI2_Eb_2 = MI2_Ds_2,
+    MI2_E_2,   // 5C4B
+    MI2_F_2,   // 5C4C
+    MI2_Fs_2,  // 5C4D
+    MI2_Gb_2 = MI2_Fs_2,
+    MI2_G_2,   // 5C4E
+    MI2_Gs_2,  // 5C4F
+    MI2_Ab_2 = MI2_Gs_2,
+    MI2_A_2,   // 5C50
+    MI2_As_2,  // 5C51
+    MI2_Bb_2 = MI2_As_2,
+    MI2_B_2,  // 5C52
+
+    MI2_C_3,   // 5C53
+    MI2_Cs_3,  // 5C54
+    MI2_Db_3 = MI2_Cs_3,
+    MI2_D_3,   // 5C55
+    MI2_Ds_3,  // 5C56
+    MI2_Eb_3 = MI2_Ds_3,
+    MI2_E_3,   // 5C57
+    MI2_F_3,   // 5C58
+    MI2_Fs_3,  // 5C59
+    MI2_Gb_3 = MI2_Fs_3,
+    MI2_G_3,   // 5C5A
+    MI2_Gs_3,  // 5C5B
+    MI2_Ab_3 = MI2_Gs_3,
+    MI2_A_3,   // 5C5C
+    MI2_As_3,  // 5C5D
+    MI2_Bb_3 = MI2_As_3,
+    MI2_B_3,  // 5C5E
+
+    MI2_C_4,   // 5C5F
+    MI2_Cs_4,  // 5C60
+    MI2_Db_4 = MI2_Cs_4,
+    MI2_D_4,   // 5C61
+    MI2_Ds_4,  // 5C62
+    MI2_Eb_4 = MI2_Ds_4,
+    MI2_E_4,   // 5C63
+    MI2_F_4,   // 5C64
+    MI2_Fs_4,  // 5C65
+    MI2_Gb_4 = MI2_Fs_4,
+    MI2_G_4,   // 5C66
+    MI2_Gs_4,  // 5C67
+    MI2_Ab_4 = MI2_Gs_4,
+    MI2_A_4,   // 5C68
+    MI2_As_4,  // 5C69
+    MI2_Bb_4 = MI2_As_4,
+    MI2_B_4,  // 5C6A
+
+    MI2_C_5,   // 5C6B
+    MI2_Cs_5,  // 5C6C
+    MI2_Db_5 = MI2_Cs_5,
+    MI2_D_5,   // 5C6D
+    MI2_Ds_5,  // 5C6E
+    MI2_Eb_5 = MI2_Ds_5,
+    MI2_E_5,   // 5C6F
+    MI2_F_5,   // 5C70
+    MI2_Fs_5,  // 5C71
+    MI2_Gb_5 = MI2_Fs_5,
+    MI2_G_5,   // 5C72
+    MI2_Gs_5,  // 5C73
+    MI2_Ab_5 = MI2_Gs_5,
+    MI2_A_5,   // 5C74
+    MI2_As_5,  // 5C75
+    MI2_Bb_5 = MI2_As_5,
+    MI2_B_5,  // 5C76
+	
+	MI2_OCTD,
+	MI2_OCTU,
+    MI2_CHD,   // 5CAF
+    MI2_CHU,   // 5CB0
+	
+	    // MIDI additionals 3
+	  MI3_C_0,   // 5C2F
+    MI3_Cs_0,  // 5C30
+    MI3_Db_0 = MI3_Cs_0,
+    MI3_D_0,   // 5C31
+    MI3_Ds_0,  // 5C32
+    MI3_Eb_0 = MI3_Ds_0,
+    MI3_E_0,   // 5C33
+    MI3_F_0,   // 5C34
+    MI3_Fs_0,  // 5C35
+    MI3_Gb_0 = MI3_Fs_0,
+    MI3_G_0,   // 5C36
+    MI3_Gs_0,  // 5C37
+    MI3_Ab_0 = MI3_Gs_0,
+    MI3_A_0,   // 5C38
+    MI3_As_0,  // 5C39
+    MI3_Bb_0 = MI3_As_0,
+    MI3_B_0,  // 5C3A
+
+    MI3_C_1,   // 5C3B
+    MI3_Cs_1,  // 5C3C
+    MI3_Db_1 = MI3_Cs_1,
+    MI3_D_1,   // 5C3D
+    MI3_Ds_1,  // 5C3E
+    MI3_Eb_1 = MI3_Ds_1,
+    MI3_E_1,   // 5C3F
+    MI3_F_1,   // 5C40
+    MI3_Fs_1,  // 5C41
+    MI3_Gb_1 = MI3_Fs_1,
+    MI3_G_1,   // 5C42
+    MI3_Gs_1,  // 5C43
+    MI3_Ab_1 = MI3_Gs_1,
+    MI3_A_1,   // 5C44
+    MI3_As_1,  // 5C45
+    MI3_Bb_1 = MI3_As_1,
+    MI3_B_1,  // 5C46
+
+    MI3_C_2,   // 5C47
+    MI3_Cs_2,  // 5C48
+    MI3_Db_2 = MI3_Cs_2,
+    MI3_D_2,   // 5C49
+    MI3_Ds_2,  // 5C4A
+    MI3_Eb_2 = MI3_Ds_2,
+    MI3_E_2,   // 5C4B
+    MI3_F_2,   // 5C4C
+    MI3_Fs_2,  // 5C4D
+    MI3_Gb_2 = MI3_Fs_2,
+    MI3_G_2,   // 5C4E
+    MI3_Gs_2,  // 5C4F
+    MI3_Ab_2 = MI3_Gs_2,
+    MI3_A_2,   // 5C50
+    MI3_As_2,  // 5C51
+    MI3_Bb_2 = MI3_As_2,
+    MI3_B_2,  // 5C52
+
+    MI3_C_3,   // 5C53
+    MI3_Cs_3,  // 5C54
+    MI3_Db_3 = MI3_Cs_3,
+    MI3_D_3,   // 5C55
+    MI3_Ds_3,  // 5C56
+    MI3_Eb_3 = MI3_Ds_3,
+    MI3_E_3,   // 5C57
+    MI3_F_3,   // 5C58
+    MI3_Fs_3,  // 5C59
+    MI3_Gb_3 = MI3_Fs_3,
+    MI3_G_3,   // 5C5A
+    MI3_Gs_3,  // 5C5B
+    MI3_Ab_3 = MI3_Gs_3,
+    MI3_A_3,   // 5C5C
+    MI3_As_3,  // 5C5D
+    MI3_Bb_3 = MI3_As_3,
+    MI3_B_3,  // 5C5E
+
+    MI3_C_4,   // 5C5F
+    MI3_Cs_4,  // 5C60
+    MI3_Db_4 = MI3_Cs_4,
+    MI3_D_4,   // 5C61
+    MI3_Ds_4,  // 5C62
+    MI3_Eb_4 = MI3_Ds_4,
+    MI3_E_4,   // 5C63
+    MI3_F_4,   // 5C64
+    MI3_Fs_4,  // 5C65
+    MI3_Gb_4 = MI3_Fs_4,
+    MI3_G_4,   // 5C66
+    MI3_Gs_4,  // 5C67
+    MI3_Ab_4 = MI3_Gs_4,
+    MI3_A_4,   // 5C68
+    MI3_As_4,  // 5C69
+    MI3_Bb_4 = MI3_As_4,
+    MI3_B_4,  // 5C6A
+
+    MI3_C_5,   // 5C6B
+    MI3_Cs_5,  // 5C6C
+    MI3_Db_5 = MI3_Cs_5,
+    MI3_D_5,   // 5C6D
+    MI3_Ds_5,  // 5C6E
+    MI3_Eb_5 = MI3_Ds_5,
+    MI3_E_5,   // 5C6F
+    MI3_F_5,   // 5C70
+    MI3_Fs_5,  // 5C71
+    MI3_Gb_5 = MI3_Fs_5,
+    MI3_G_5,   // 5C72
+    MI3_Gs_5,  // 5C73
+    MI3_Ab_5 = MI3_Gs_5,
+    MI3_A_5,   // 5C74
+    MI3_As_5,  // 5C75
+    MI3_Bb_5 = MI3_As_5,
+    MI3_B_5,  // 5C76
+
+		
+	    // MIDI additionals 4
+	  MI4_C_0,   // 5C2F
+    MI4_Cs_0,  // 5C30
+    MI4_Db_0 = MI4_Cs_0,
+    MI4_D_0,   // 5C31
+    MI4_Ds_0,  // 5C32
+    MI4_Eb_0 = MI4_Ds_0,
+    MI4_E_0,   // 5C33
+    MI4_F_0,   // 5C34
+    MI4_Fs_0,  // 5C35
+    MI4_Gb_0 = MI4_Fs_0,
+    MI4_G_0,   // 5C36
+    MI4_Gs_0,  // 5C37
+    MI4_Ab_0 = MI4_Gs_0,
+    MI4_A_0,   // 5C38
+    MI4_As_0,  // 5C39
+    MI4_Bb_0 = MI4_As_0,
+    MI4_B_0,  // 5C3A
+
+    MI4_C_1,   // 5C3B
+    MI4_Cs_1,  // 5C3C
+    MI4_Db_1 = MI4_Cs_1,
+    MI4_D_1,   // 5C3D
+    MI4_Ds_1,  // 5C3E
+    MI4_Eb_1 = MI4_Ds_1,
+    MI4_E_1,   // 5C3F
+    MI4_F_1,   // 5C40
+    MI4_Fs_1,  // 5C41
+    MI4_Gb_1 = MI4_Fs_1,
+    MI4_G_1,   // 5C42
+    MI4_Gs_1,  // 5C43
+    MI4_Ab_1 = MI4_Gs_1,
+    MI4_A_1,   // 5C44
+    MI4_As_1,  // 5C45
+    MI4_Bb_1 = MI4_As_1,
+    MI4_B_1,  // 5C46
+
+    MI4_C_2,   // 5C47
+    MI4_Cs_2,  // 5C48
+    MI4_Db_2 = MI4_Cs_2,
+    MI4_D_2,   // 5C49
+    MI4_Ds_2,  // 5C4A
+    MI4_Eb_2 = MI4_Ds_2,
+    MI4_E_2,   // 5C4B
+    MI4_F_2,   // 5C4C
+    MI4_Fs_2,  // 5C4D
+    MI4_Gb_2 = MI4_Fs_2,
+    MI4_G_2,   // 5C4E
+    MI4_Gs_2,  // 5C4F
+    MI4_Ab_2 = MI4_Gs_2,
+    MI4_A_2,   // 5C50
+    MI4_As_2,  // 5C51
+    MI4_Bb_2 = MI4_As_2,
+    MI4_B_2,  // 5C52
+
+    MI4_C_3,   // 5C53
+    MI4_Cs_3,  // 5C54
+    MI4_Db_3 = MI4_Cs_3,
+    MI4_D_3,   // 5C55
+    MI4_Ds_3,  // 5C56
+    MI4_Eb_3 = MI4_Ds_3,
+    MI4_E_3,   // 5C57
+    MI4_F_3,   // 5C58
+    MI4_Fs_3,  // 5C59
+    MI4_Gb_3 = MI4_Fs_3,
+    MI4_G_3,   // 5C5A
+    MI4_Gs_3,  // 5C5B
+    MI4_Ab_3 = MI4_Gs_3,
+    MI4_A_3,   // 5C5C
+    MI4_As_3,  // 5C5D
+    MI4_Bb_3 = MI4_As_3,
+    MI4_B_3,  // 5C5E
+
+    MI4_C_4,   // 5C5F
+    MI4_Cs_4,  // 5C60
+    MI4_Db_4 = MI4_Cs_4,
+    MI4_D_4,   // 5C61
+    MI4_Ds_4,  // 5C62
+    MI4_Eb_4 = MI4_Ds_4,
+    MI4_E_4,   // 5C63
+    MI4_F_4,   // 5C64
+    MI4_Fs_4,  // 5C65
+    MI4_Gb_4 = MI4_Fs_4,
+    MI4_G_4,   // 5C66
+    MI4_Gs_4,  // 5C67
+    MI4_Ab_4 = MI4_Gs_4,
+    MI4_A_4,   // 5C68
+    MI4_As_4,  // 5C69
+    MI4_Bb_4 = MI4_As_4,
+    MI4_B_4,  // 5C6A
+
+    MI4_C_5,   // 5C6B
+    MI4_Cs_5,  // 5C6C
+    MI4_Db_5 = MI4_Cs_5,
+    MI4_D_5,   // 5C6D
+    MI4_Ds_5,  // 5C6E
+    MI4_Eb_5 = MI4_Ds_5,
+    MI4_E_5,   // 5C6F
+    MI4_F_5,   // 5C70
+    MI4_Fs_5,  // 5C71
+    MI4_Gb_5 = MI4_Fs_5,
+    MI4_G_5,   // 5C72
+    MI4_Gs_5,  // 5C73
+    MI4_Ab_5 = MI4_Gs_5,
+    MI4_A_5,   // 5C74
+    MI4_As_5,  // 5C75
+    MI4_Bb_5 = MI4_As_5,
+    MI4_B_5,  // 5C76
+	
+	
+	    // MIDI additionals repeated
+	    MI5_C_0,   // 5C2F
+    MI5_Cs_0,  // 5C30
+    MI5_Db_0 = MI5_Cs_0,
+    MI5_D_0,   // 5C31
+    MI5_Ds_0,  // 5C32
+    MI5_Eb_0 = MI5_Ds_0,
+    MI5_E_0,   // 5C33
+    MI5_F_0,   // 5C34
+    MI5_Fs_0,  // 5C35
+    MI5_Gb_0 = MI5_Fs_0,
+    MI5_G_0,   // 5C36
+    MI5_Gs_0,  // 5C37
+    MI5_Ab_0 = MI5_Gs_0,
+    MI5_A_0,   // 5C38
+    MI5_As_0,  // 5C39
+    MI5_Bb_0 = MI5_As_0,
+    MI5_B_0,  // 5C3A
+
+    MI5_C_1,   // 5C3B
+    MI5_Cs_1,  // 5C3C
+    MI5_Db_1 = MI5_Cs_1,
+    MI5_D_1,   // 5C3D
+    MI5_Ds_1,  // 5C3E
+    MI5_Eb_1 = MI5_Ds_1,
+    MI5_E_1,   // 5C3F
+    MI5_F_1,   // 5C40
+    MI5_Fs_1,  // 5C41
+    MI5_Gb_1 = MI5_Fs_1,
+    MI5_G_1,   // 5C42
+    MI5_Gs_1,  // 5C43
+    MI5_Ab_1 = MI5_Gs_1,
+    MI5_A_1,   // 5C44
+    MI5_As_1,  // 5C45
+    MI5_Bb_1 = MI5_As_1,
+    MI5_B_1,  // 5C46
+
+    MI5_C_2,   // 5C47
+    MI5_Cs_2,  // 5C48
+    MI5_Db_2 = MI5_Cs_2,
+    MI5_D_2,   // 5C49
+    MI5_Ds_2,  // 5C4A
+    MI5_Eb_2 = MI5_Ds_2,
+    MI5_E_2,   // 5C4B
+    MI5_F_2,   // 5C4C
+    MI5_Fs_2,  // 5C4D
+    MI5_Gb_2 = MI5_Fs_2,
+    MI5_G_2,   // 5C4E
+    MI5_Gs_2,  // 5C4F
+    MI5_Ab_2 = MI5_Gs_2,
+    MI5_A_2,   // 5C50
+    MI5_As_2,  // 5C51
+    MI5_Bb_2 = MI5_As_2,
+    MI5_B_2,  // 5C52
+
+    MI5_C_3,   // 5C53
+    MI5_Cs_3,  // 5C54
+    MI5_Db_3 = MI5_Cs_3,
+    MI5_D_3,   // 5C55
+    MI5_Ds_3,  // 5C56
+    MI5_Eb_3 = MI5_Ds_3,
+    MI5_E_3,   // 5C57
+    MI5_F_3,   // 5C58
+    MI5_Fs_3,  // 5C59
+    MI5_Gb_3 = MI5_Fs_3,
+    MI5_G_3,   // 5C5A
+    MI5_Gs_3,  // 5C5B
+    MI5_Ab_3 = MI5_Gs_3,
+    MI5_A_3,   // 5C5C
+    MI5_As_3,  // 5C5D
+    MI5_Bb_3 = MI5_As_3,
+    MI5_B_3,  // 5C5E
+
+    MI5_C_4,   // 5C5F
+    MI5_Cs_4,  // 5C60
+    MI5_Db_4 = MI5_Cs_4,
+    MI5_D_4,   // 5C61
+    MI5_Ds_4,  // 5C62
+    MI5_Eb_4 = MI5_Ds_4,
+    MI5_E_4,   // 5C63
+    MI5_F_4,   // 5C64
+    MI5_Fs_4,  // 5C65
+    MI5_Gb_4 = MI5_Fs_4,
+    MI5_G_4,   // 5C66
+    MI5_Gs_4,  // 5C67
+    MI5_Ab_4 = MI5_Gs_4,
+    MI5_A_4,   // 5C68
+    MI5_As_4,  // 5C69
+    MI5_Bb_4 = MI5_As_4,
+    MI5_B_4,  // 5C6A
+
+    MI5_C_5,   // 5C6B
+    MI5_Cs_5,  // 5C6C
+    MI5_Db_5 = MI5_Cs_5,
+    MI5_D_5,   // 5C6D
+    MI5_Ds_5,  // 5C6E
+    MI5_Eb_5 = MI5_Ds_5,
+    MI5_E_5,   // 5C6F
+    MI5_F_5,   // 5C70S
+    MI5_Fs_5,  // 5C71
+    MI5_Gb_5 = MI5_Fs_5,
+    MI5_G_5,   // 5C72
+    MI5_Gs_5,  // 5C73
+    MI5_Ab_5 = MI5_Gs_5,
+    MI5_A_5,   // 5C74
+    MI5_As_5,  // 5C75
+    MI5_Bb_5 = MI5_As_5,
+    MI5_B_5,  // 5C76
+	
+	//////////////////////////////////////////////////
+	
+	TRIKL_REG_TGL,//registroa habilitatu/deshabilitatzeko
+	TRIKL_REG_ON,//registroa habilitatzeko
+	TRIKL_REG_OFF,//registroa deshabilitatzeko
+	
+	TRIKL_DRUM_TGL,// habilitatu/deshabilitatzeko
+	TRIKL_DRUM_ON,// habilitatzeko
+	TRIKL_DRUM_OFF,// deshabilitatzeko
+  TRIKL_ALT_TGL,//MIDI kanal alternatibok, instrumentuz aldatzeko
+	SAFE_RANGE
 };
 
 // Keycode modifiers & aliases
@@ -899,12 +1356,21 @@ enum quantum_keycodes {
 #define SH_OFF (QK_SWAP_HANDS | OP_SH_OFF)
 
 // MIDI aliases
-#define MIDI_TONE_MIN MI_C
-#define MIDI_TONE_MAX MI_B_5
+#define MIDI_TONE_MIN MI_C_0
+#define MIDI_TONE_MAX MI_C_6
+#define MIDI2_TONE_MIN MI2_C_0 //XAM bass
+#define MIDI2_TONE_MAX MI2_B_5 //XAM
+#define MIDI3_TONE_MIN MI3_C_0 //XAM major
+#define MIDI3_TONE_MAX MI3_B_5 //XAM
+#define MIDI4_TONE_MIN MI4_C_0 //XAM minor
+#define MIDI4_TONE_MAX MI4_B_5 //XAM
+#define MIDI5_TONE_MIN MI5_C_0 //XAM 7th 
+#define MIDI5_TONE_MAX MI5_B_5 //XAM
 #define MIDI_OCTAVE_MIN MI_OCT_N2
 #define MIDI_OCTAVE_MAX MI_OCT_7
+//#define MIDI_OCTAVE_MAX MI_OCT_6
 #define MIDI_TRANSPOSE_MIN MI_TRNS_N6
-#define MIDI_TRANSPOSE_MAX MI_TRNS_6
+#define MIDI_TRANSPOSE_MAX MI_TRNS_8
 #define MIDI_VELOCITY_MIN MI_VEL_0
 #define MIDI_VELOCITY_MAX MI_VEL_10
 #define MIDI_CHANNEL_MIN MI_CH1

@@ -24,43 +24,112 @@ Ported to QMK by Stephen Peery <https://github.com/smp4488/>
 #include "ch.h"
 #include "hal.h"
 
+#include <config.h>
+
 #include "wait.h"
 #include "util.h"
 #include "matrix.h"
 #include "debounce.h"
 #include "quantum.h"
 #include "sn32f24xb.h"
+#include "process_midi.h"
+#    include <LUFA/Drivers/USB/USB.h>
+#    include "midi.h"
+#    include "qmk_midi.h"
+extern bool keep_bending_down;
+extern bool keep_bending_up;
+ int32_t  bend = 0;
+ extern midi_config_t   midi_config;//right
+static uint16_t init_scan_count = 0;
 
 #if defined(OPTICAL_MATRIX)
 #ifndef PRESSED_KEY_PIN_STATE
-#    define PRESSED_KEY_PIN_STATE 1
+#  define PRESSED_KEY_PIN_STATE 1
 #endif
 #endif
 
 #ifndef PRESSED_KEY_PIN_STATE
-#    define PRESSED_KEY_PIN_STATE 0
+#  define PRESSED_KEY_PIN_STATE 0
 #endif
 
 #ifndef MATRIX_KEY_SAMPLE_DELAY
-#    define MATRIX_KEY_SAMPLE_DELAY 100
+#  define MATRIX_KEY_SAMPLE_DELAY 100
 #endif
 
 #if defined(MATRIX_KEY_SAMPLE_DELAY)
 void sample_delay(void){
-    //should give 2000/48000000Mhz = 42us delay
-    //we want 42 micro thus to get value
-    for (int i = 0; i < MATRIX_KEY_SAMPLE_DELAY; ++i) {
-        __asm__ volatile("" ::: "memory");
-    }
-    //wait_us(73); //does not work
+  //should give 2000/48.000.000Hz = 41.66us delay
+  //we want 42 micro thus to get value
+  for (int i = 0; i < MATRIX_KEY_SAMPLE_DELAY; ++i) {
+  __asm__ volatile("" ::: "memory");
+  }
+  //wait_us(73); //does not work
 }
 #endif
 
 static const pin_t row_pins[MATRIX_ROWS] = MATRIX_ROW_PINS;
 static const pin_t col_pins[MATRIX_COLS] = MATRIX_COL_PINS;
-matrix_row_t raw_matrix[MATRIX_ROWS]; //raw values
+
+
+#if defined(TRIKL_IX10_T)
+ const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
+  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
+  {  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
+  {  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
+  {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1 },
+  {  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  1 },
+  {  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  1 },
+  {  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
+  };
+#elif defined(TRIKL_IX11_T)
+ const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
+  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
+  {  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  1 },
+  {  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  1 },
+  {  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  1 },
+  {  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
+  };
+#elif defined(TRIKL_IX11CR_T)
+ const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
+  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
+  {  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
+  {  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
+  {  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
+  };
+#elif defined(TRIKL_IXLR_T)
+ const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
+  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
+  {  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
+  {  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
+  };
+#elif defined(TRIKL_IXLL_T)
+ const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
+  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
+  {  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
+  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
+  {  1,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
+  };
+#else
+	#error "Unexpected PRODUCT!"
+#endif
+
+
+
+matrix_row_t raw_matrix[MATRIX_ROWS] = {0}; //raw values
 matrix_row_t last_matrix[MATRIX_ROWS] = {0};  // raw values
-matrix_row_t matrix[MATRIX_ROWS]; //debounced values
+matrix_row_t matrix[MATRIX_ROWS] = {0}; //debounced values
 
 static bool matrix_changed = false;
 
@@ -78,15 +147,15 @@ void matrix_print(void) {}
 
 static void init_pins(void) {
 #if(DIODE_DIRECTION == ROW2COL)
-    //  Unselect ROWs
-    for (uint8_t x = 0; x < MATRIX_ROWS; x++) {
-        setPinInputHigh(row_pins[x]);
-    }
-#elif(DIODE_DIRECTION == COL2ROW)
-    // Unselect COLs
-    for (uint8_t x = 0; x < MATRIX_COLS; x++) {
-        setPinInputHigh(col_pins[x]);
-    }
+  //  Unselect ROWs
+  for (uint8_t x = 0; x < MATRIX_ROWS; x++) {
+  setPinInputHigh(row_pins[x]);
+  }
+#elif(DIODE_DIRECTION == COL2ROW) //xam ajazz ak33 rev2
+  // Unselect COLs
+  for (uint8_t x = 0; x < MATRIX_COLS; x++) {
+  setPinInputHigh(col_pins[x]);
+  }
 #else
 #error DIODE_DIRECTION must be one of COL2ROW or ROW2COL!
 #endif
@@ -94,100 +163,139 @@ static void init_pins(void) {
 
 void matrix_scan_select(uint8_t current){ 
 #if(DIODE_DIRECTION == ROW2COL)
-    // Select COL
-    setPinOutput(col_pins[current]);
-    writePinLow(col_pins[current]);
+  // Select COL
+  setPinOutput(col_pins[current]);
+  writePinLow(col_pins[current]);
 #elif(DIODE_DIRECTION == COL2ROW)
-    // Select ROW
-    setPinOutput(row_pins[current]);
-    writePinLow(row_pins[current]);
+  // Select ROW
+  setPinOutput(row_pins[current]);
+  writePinLow(row_pins[current]);
 #endif
 }
 
 void matrix_scan_unselect(uint8_t current) {
 #if(DIODE_DIRECTION == ROW2COL)
-    // Select COL
-    setPinInputHigh(col_pins[current]);
+  // Select COL
+  setPinInputHigh(col_pins[current]);
 #elif(DIODE_DIRECTION == COL2ROW)
-    // Select ROW
-    setPinInputHigh(row_pins[current]);
+  // Select ROW
+  setPinInputHigh(row_pins[current]);
 #endif
 }
 
 void matrix_init(void) {
-    // initialize key pins
-    init_pins();
+  // initialize key pins
+  init_pins();
 
-    // initialize matrix state: all keys off
-    for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
-        raw_matrix[i] = 0;
-        matrix[i]     = 0;
-    }
+  // initialize matrix state: all keys off
+  for (uint8_t i = 0; i < MATRIX_ROWS; i++) {
+  raw_matrix[i] = 0;
+  matrix[i]  = 0;
+  }
 
-    debounce_init(MATRIX_ROWS);
+  debounce_init(MATRIX_ROWS);
 
-    matrix_init_quantum();
+  matrix_init_quantum();
 }
 
 uint8_t matrix_scan(void) {
-    matrix_changed = false;
-    for (uint8_t current_col = 0; current_col < MATRIX_COLS; current_col++) {
-        for (uint8_t row_index = 0; row_index < MATRIX_ROWS; row_index++) {
-            // Determine if the matrix changed state
-            if ((last_matrix[row_index] != raw_matrix[row_index])) {
-                matrix_changed         = true;
-                last_matrix[row_index] = raw_matrix[row_index];
-            }
-        }
+  //XAM////////////////////////////
+  if (keep_bending_down == 1) {
+    if (bend > -0x2000) {
+      bend = bend - 10;
+      midi_send_pitchbend(&midi_device, midi_config.channel, bend);
     }
-
+  } else if(keep_bending_up == 1) {
+    if (bend < 0x1fff) {   
+      bend = bend + 10;
+      midi_send_pitchbend(&midi_device, midi_config.channel, bend);
+    }
+  } else {
+    if (bend < -50) {
+      bend = bend + 50;
+      midi_send_pitchbend(&midi_device, midi_config.channel, bend);
+    } else if (bend > 50) {
+      bend = bend - 50;
+      midi_send_pitchbend(&midi_device, midi_config.channel, bend);
+    } else if ( bend != 0) {
+      bend = 0;
+      midi_send_pitchbend(&midi_device, midi_config.channel, bend);
+    }
+  }
+  
+  matrix_changed = false;
+  for (uint8_t current_col = 0; current_col < MATRIX_COLS; current_col++) {
+    for (uint8_t row_index = 0; row_index < MATRIX_ROWS; row_index++) {
+    // Determine if the matrix changed state
+      if ((last_matrix[row_index] != raw_matrix[row_index])) {
+        matrix_changed  = true;
+        last_matrix[row_index] = raw_matrix[row_index];
+      }
+    }
+  }
+  if (init_scan_count <= 2000) {
+    init_scan_count++;
+    matrix_changed = false;
+    memset(raw_matrix, 0, sizeof(raw_matrix)); // raw values
+    memset(last_matrix, 0, sizeof(last_matrix)); // raw values
+  } else {
     debounce(raw_matrix, matrix, MATRIX_ROWS, matrix_changed);
+  }
+  matrix_scan_quantum();
 
-    matrix_scan_quantum();
-
-    return matrix_changed;
+  return matrix_changed;
 }
 
 void matrix_scan_keys(matrix_row_t raw_matrix[], uint8_t current){
-        #if(DIODE_DIRECTION == ROW2COL)
-            // Read the key matrix rows on col
-            uint8_t col_index = current;
-            // Enable the column
-            matrix_scan_select(col_index);
-            sample_delay();
-            for (uint8_t row_index = 0; row_index < MATRIX_ROWS; row_index++) {
-                // Check row pin state
-                if (readPin(row_pins[row_index]) == PRESSED_KEY_PIN_STATE) {
-                    // Pin LO, set col bit
-                    raw_matrix[row_index] |= (MATRIX_ROW_SHIFTER << col_index);
-                } else {
-                    // Pin HI, clear col bit
-                    raw_matrix[row_index] &= ~(MATRIX_ROW_SHIFTER << col_index);
-                }
-            }
-            // Disable the column
-            matrix_scan_unselect(col_index);
-            //see https://github.com/SonixQMK/qmk_firmware/issues/157
-            sample_delay();
-        #elif(DIODE_DIRECTION == COL2ROW)
-            // Read the key matrix cols on row
-            uint8_t row_index = current;
-            // Enable the row
-            matrix_scan_select(row_index);
-            sample_delay();
-            for (uint8_t col_index = 0; col_index < MATRIX_COLS; col_index++) {
-                // Check row pin state
-                if (readPin(col_pins[col_index]) == PRESSED_KEY_PIN_STATE) {
-                    // Pin LO, set col bit
-                    raw_matrix[row_index] |= (MATRIX_ROW_SHIFTER << col_index);
-                } else {
-                    // Pin HI, clear col bit
-                    raw_matrix[row_index] &= ~(MATRIX_ROW_SHIFTER << col_index);
-                }
-            }
-            // Disable the row
-            matrix_scan_unselect(row_index);
-            //see https://github.com/SonixQMK/qmk_firmware/issues/157
-            sample_delay();
-        #endif
+  #if(DIODE_DIRECTION == ROW2COL)
+			//XAM comented for clarity
+  /*// Read the key matrix rows on col
+  uint8_t col_index = current;
+  // Enable the column
+  matrix_scan_select(col_index);
+  sample_delay();
+  for (uint8_t row_index = 0; row_index < MATRIX_ROWS; row_index++) {
+   // Check row pin state
+   if (readPin(row_pins[row_index]) == PRESSED_KEY_PIN_STATE) {
+    // Pin LO, set col bit
+    raw_matrix[row_index] |= (MATRIX_ROW_SHIFTER << col_index);
+   } else {
+    // Pin HI, clear col bit
+    raw_matrix[row_index] &= ~(MATRIX_ROW_SHIFTER << col_index);
+   }
+  }
+  // Disable the column
+  matrix_scan_unselect(col_index);
+  //see https://github.com/SonixQMK/qmk_firmware/issues/157
+  sample_delay();*/
+  #elif(DIODE_DIRECTION == COL2ROW)//XAM ak33 rev2
+  // Read the key matrix cols on row
+  uint8_t row_index = current;
+  // Enable the row unless NO_PIN//XAM
+			//if (row_pins[row_index] != NO_PIN) {//XAM I won't disable a row so no sense for now
+			matrix_scan_select(row_index);
+			sample_delay(); //wait after selection
+			for (uint8_t col_index = 1; col_index <= MATRIX_COLS; col_index++) {
+				// Check row pin state unless NO_PIN
+				//if (col_pins[col_index] != NO_PIN) {//XAM instead of pins, define unsued keys
+				if (USED_KEYS[row_index][MATRIX_COLS-col_index] == 1){//check only if used, else skip it
+				  //TODO chek if its space button, if it is and has changed since last check, report that all keys need to be released
+				  /*if (row_index == 5 && col_index == 6) {
+						if last_matrix[row_index] = raw_matrix[row_index];
+					}*/
+					if (readPin(col_pins[MATRIX_COLS-col_index]) == PRESSED_KEY_PIN_STATE) {
+						// Pin LO, set col bit
+						raw_matrix[row_index] |= (MATRIX_ROW_SHIFTER << (MATRIX_COLS-col_index));
+					} else {
+						// Pin HI, clear col bit
+						raw_matrix[row_index] &= ~(MATRIX_ROW_SHIFTER << (MATRIX_COLS-col_index));
+					}
+				}
+			}
+			// Disable the row
+			matrix_scan_unselect(row_index);
+  //}
+  //see https://github.com/SonixQMK/qmk_firmware/issues/157
+  //sample_delay();//XAM kentzen proatzet, COL2ROW not affected esateu ta
+  #endif
 }
