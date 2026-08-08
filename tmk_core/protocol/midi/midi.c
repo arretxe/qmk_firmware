@@ -83,7 +83,9 @@ void midi_send_noteoff(MidiDevice* device, uint8_t chan, uint8_t num, uint8_t ve
     device->send_func(device, 3, MIDI_NOTEOFF | (chan & MIDI_CHANMASK), num & 0x7F, vel & 0x7F);
 }
 
-void midi_send_aftertouch(MidiDevice* device, uint8_t chan, uint8_t note_num, uint8_t amt) { device->send_func(device, 3, MIDI_AFTERTOUCH | (chan & MIDI_CHANMASK), note_num & 0x7F, amt & 0x7F); }
+void midi_send_aftertouch(MidiDevice* device, uint8_t chan, uint8_t note_num, uint8_t amt) { 
+    device->send_func(device, 3, MIDI_AFTERTOUCH | (chan & MIDI_CHANMASK), note_num & 0x7F, amt & 0x7F); 
+}
 
 // XXX does this work right?
 // amt in range -0x2000, 0x1fff

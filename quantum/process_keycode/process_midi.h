@@ -46,13 +46,9 @@ extern midi_config_t midi_config;
 
 void midi_init(void);
 bool process_midi(uint16_t keycode, keyrecord_t *record);
-
-struct MYLED{
-	uint8_t R;
-	uint8_t G;
-	uint8_t B;
-};
-extern struct MYLED LED_OVERRIDES[DRIVER_LED_TOTAL];
+extern bool LED_OVERRIDES[DRIVER_LED_TOTAL];
+extern uint8_t LED_BELLOWS;
+extern volatile bool trikl_midi_message_received;
 
 #        define MIDI_INVALID_NOTE 0xFF
 #        define MIDI_TONE_COUNT (MIDI_TONE_MAX - MIDI_TONE_MIN + 1)

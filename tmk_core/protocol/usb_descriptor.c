@@ -54,8 +54,12 @@
 const USB_Descriptor_HIDReport_Datatype_t PROGMEM SharedReport[] = {
 #    define SHARED_REPORT_STARTED
 #else
+#ifndef DISABLE_KEYBOARD_HID
 const USB_Descriptor_HIDReport_Datatype_t PROGMEM KeyboardReport[] = {
 #endif
+#endif
+
+#ifndef DISABLE_KEYBOARD_HID
     HID_RI_USAGE_PAGE(8, 0x01),        // Generic Desktop
     HID_RI_USAGE(8, 0x06),             // Keyboard
     HID_RI_COLLECTION(8, 0x01),        // Application
@@ -97,8 +101,11 @@ const USB_Descriptor_HIDReport_Datatype_t PROGMEM KeyboardReport[] = {
         HID_RI_REPORT_SIZE(8, 0x03),
         HID_RI_OUTPUT(8, HID_IOF_CONSTANT),
     HID_RI_END_COLLECTION(0),
+#endif
 #ifndef KEYBOARD_SHARED_EP
+#ifndef DISABLE_KEYBOARD_HID
 };
+#endif
 #endif
 
 #ifdef MOUSE_ENABLE
@@ -479,6 +486,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
         .MaxPowerConsumption    = USB_CONFIG_POWER_MA(USB_MAX_POWER_CONSUMPTION)
     },
 #ifndef KEYBOARD_SHARED_EP
+#ifndef DISABLE_KEYBOARD_HID
     /*
      * Keyboard
      */
@@ -516,6 +524,7 @@ const USB_Descriptor_Configuration_t PROGMEM ConfigurationDescriptor = {
         .EndpointSize           = KEYBOARD_EPSIZE,
         .PollingIntervalMS      = USB_POLLING_INTERVAL_MS
     },
+#endif
 #endif
 
 #ifdef RAW_ENABLE
@@ -1154,10 +1163,12 @@ uint16_t get_usb_descriptor(const uint16_t wValue, const uint16_t wIndex, const 
         case HID_DTYPE_HID:
             switch (wIndex) {
 #ifndef KEYBOARD_SHARED_EP
+#ifndef DISABLE_KEYBOARD_HID
                 case KEYBOARD_INTERFACE:
                     Address = &ConfigurationDescriptor.Keyboard_HID;
                     Size    = sizeof(USB_HID_Descriptor_HID_t);
                     break;
+#endif
 #endif
 
 #if defined(MOUSE_ENABLE) && !defined(MOUSE_SHARED_EP)
@@ -1210,11 +1221,13 @@ uint16_t get_usb_descriptor(const uint16_t wValue, const uint16_t wIndex, const 
         case HID_DTYPE_Report:
             switch (wIndex) {
 #ifndef KEYBOARD_SHARED_EP
+#ifndef DISABLE_KEYBOARD_HID
                 case KEYBOARD_INTERFACE:
                     Address = &KeyboardReport;
                     Size    = sizeof(KeyboardReport);
 
                     break;
+#endif
 #endif
 
 #if defined(MOUSE_ENABLE) && !defined(MOUSE_SHARED_EP)

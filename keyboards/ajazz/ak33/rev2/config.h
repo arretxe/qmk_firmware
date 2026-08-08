@@ -18,37 +18,64 @@
 
 #include "config_common.h"
 
-#define TRIKL_IX11_T //IX10 or IX11 or IX11CR or IXLR or IXLL
+// Define to remove the default HID keyboard interface to present purely as a MIDI device
+#define DISABLE_KEYBOARD_HID
+
+#define TRIKL_IX10_T //IX10 or IX11 or IX11CR or IXLR or IXLL
 #define MIDI_TRIKL //komentatu basikoa bada MIDI kapak ez generatzeko
-//#define TRIKL_RGB // define to enable RGB, don't define to disable RGB
+#define TRIKL_RGB // define to enable RGB, don't define to disable RGB
 //#define INIT_AS_KB // define this if you want to start as keyboard
 #define DRUMS_POR 0 // power_on value for drums
 #define TRANSPOSE_POR 0 // power_on value for transpose (0=G/C) 3=Bb 5=C 7=D
 #define TRANS_BUT_NUM 14 //Transpose button LED number, to know which LED to assign color to
 
+/* Key-event CC protocol
+ * Event CC (sent with every key event that generates MIDI notes):
+ *   CC number : TRIKL_EVENT_CC_NUM (102 by default, safe custom range)
+ *   CC value  : row * 16 + col  (rows 0-5, cols 0-15 -> value 0-95)
+ *   CC channel: TRIKL_EVENT_CC_BASE_CH + pressed
+ *     +0 = release
+ *     +1 = press
+ *
+ * Bellow CC (separate message, sent only when bellow state toggles
+ * between 0 and non-0):
+ *   CC number : TRIKL_BELLOW_CC_NUM
+ *   CC channel: TRIKL_BELLOW_CC_CH
+ *   CC value  : 0 (bellow off) or 127 (bellow on)
+ */
+#define TRIKL_EVENT_CC_NUM      102
+#define TRIKL_EVENT_CC_BASE_CH  12
+#define TRIKL_BELLOW_CC_NUM     103
+#define TRIKL_BELLOW_CC_CH      14
+
 #define MIDI_ADVANCED //MIDI_BASIC
 
 
 #if defined(TRIKL_IX10_T)
- #define PRODUCT IX10
- #elif defined(TRIKL_IX11_T)
+  #define PRODUCT IX10
+  #define PRODUCT_ID      0x5004
+#elif defined(TRIKL_IX11_T)
   #define PRODUCT IX11
- #elif defined(TRIKL_IX11CR_T)
+  #define PRODUCT_ID      0x5005
+#elif defined(TRIKL_IX11CR_T)
   #define PRODUCT IX11CR
- #elif defined(TRIKL_IXLR_T)
- #define PRODUCT IXLR
+  #define PRODUCT_ID      0x5006
+#elif defined(TRIKL_IXLR_T)
+  #define PRODUCT IXLR
+  #define PRODUCT_ID      0x5007
 #elif defined(TRIKL_IXLL_T)
- #define PRODUCT IXLL
+  #define PRODUCT IXLL
+  #define PRODUCT_ID      0x5008
 #else
   #error "unexpected PRODUCT!"
 #endif
 
 /* USB Device descriptor parameter */
 #define VENDOR_ID       0x0C45
-#define PRODUCT_ID      0x5004
+// #define PRODUCT_ID      0x5004
 #define DEVICE_VER      0x0002
 
-#define MANUFACTURER    SoinuTxiki
+#define MANUFACTURER    SoinuTxuri
 
 #define DESCRIPTION     Triklatua
 
@@ -108,7 +135,7 @@
 #define RGB_MATRIX_CUSTOM_KB // to enable custom effects too
 #if defined TRIKL_RGB 
 //#define ENABLE_RGB_MATRIX_SOLID_COLOR
-//  #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_CUSTOM_TRIKL_SOLID // Sets the default mode, if none has been set
+  #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_CUSTOM_TRIKL_SOLID // Sets the default mode, if none has been set
   #define RGB_MATRIX_FRAMEBUFFER_EFFECTS 
   #define RGB_MATRIX_KEYPRESSES
 //#define RGB_MATRIX_KEYRELEASES // reacts to keyreleases (instead of keypresses)
@@ -146,13 +173,6 @@
   #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_CUSTOM_TRIKL_NONE  // Sets the default mode, if none has been set  
   #define ENABLE_TRIKL_NONE // custom mode with all off
 #endif
-
-
-
-//#define RGB_MATRIX_CUSTOM_EFFECT_IMPLS//LED_MATRIX?
-
-
-
 #ifndef NO_DEBUG
   #define NO_DEBUG
 #endif // !NO_DEBUG

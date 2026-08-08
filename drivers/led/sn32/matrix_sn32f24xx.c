@@ -24,7 +24,7 @@ Ported to QMK by Stephen Peery <https://github.com/smp4488/>
 #include "ch.h"
 #include "hal.h"
 
-#include <config.h>
+#include "config.h"
 
 #include "wait.h"
 #include "util.h"
@@ -32,10 +32,10 @@ Ported to QMK by Stephen Peery <https://github.com/smp4488/>
 #include "debounce.h"
 #include "quantum.h"
 #include "sn32f24xb.h"
+#include <LUFA/Drivers/USB/USB.h>
+#include "midi.h"
+#include "qmk_midi.h"
 #include "process_midi.h"
-#    include <LUFA/Drivers/USB/USB.h>
-#    include "midi.h"
-#    include "qmk_midi.h"
 extern bool keep_bending_down;
 extern bool keep_bending_up;
  int32_t  bend = 0;

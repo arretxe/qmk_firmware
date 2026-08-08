@@ -124,6 +124,7 @@ static const USBDescriptor *usb_get_descriptor_cb(USBDriver *usbp, uint8_t dtype
 }
 
 #ifndef KEYBOARD_SHARED_EP
+#ifndef DISABLE_KEYBOARD_HID
 /* keyboard endpoint state structure */
 static USBInEndpointState kbd_ep_state;
 /* keyboard endpoint initialization structure (IN) - see USBEndpointConfig comment at top of file */
@@ -139,6 +140,7 @@ static const USBEndpointConfig kbd_ep_config = {
     2,                     /* IN multiplier */
     NULL                   /* SETUP buffer (not a SETUP endpoint) */
 };
+#endif
 #endif
 
 #if defined(MOUSE_ENABLE) && !defined(MOUSE_SHARED_EP)
@@ -486,7 +488,9 @@ static void usb_event_cb(USBDriver *usbp, usbevent_t event) {
             osalSysLockFromISR();
             /* Enable the endpoints specified into the configuration. */
 #ifndef KEYBOARD_SHARED_EP
+#ifndef DISABLE_KEYBOARD_HID
             usbInitEndpointI(usbp, KEYBOARD_IN_EPNUM, &kbd_ep_config);
+#endif
 #endif
 #if defined(MOUSE_ENABLE) && !defined(MOUSE_SHARED_EP)
             usbInitEndpointI(usbp, MOUSE_IN_EPNUM, &mouse_ep_config);
@@ -565,6 +569,7 @@ static uint16_t get_hword(uint8_t *p) {
  * Other Device    Required    Optional    Optional    Optional    Optional    Optional
  */
 
+#if !defined(DISABLE_KEYBOARD_HID) || (defined(SHARED_EP_ENABLE) && !defined(KEYBOARD_SHARED_EP))
 static uint8_t set_report_buf[2] __attribute__((aligned(4)));
 static void    set_led_transfer_cb(USBDriver *usbp) {
     if (usbp->setup[6] == 2) { /* LSB(wLength) */
@@ -576,6 +581,7 @@ static void    set_led_transfer_cb(USBDriver *usbp) {
         keyboard_led_state = set_report_buf[0];
     }
 }
+#endif
 
 /* Callback for SETUP request on the endpoint 0 (control) */
 static bool usb_request_hook_cb(USBDriver *usbp) {
@@ -595,10 +601,12 @@ static bool usb_request_hook_cb(USBDriver *usbp) {
                 switch (usbp->setup[1]) { /* bRequest */
                     case HID_GET_REPORT:
                         switch (usbp->setup[4]) { /* LSB(wIndex) (check MSB==0?) */
+#ifndef DISABLE_KEYBOARD_HID
                             case KEYBOARD_INTERFACE:
                                 usbSetupTransfer(usbp, (uint8_t *)&keyboard_report_sent, sizeof(keyboard_report_sent), NULL);
                                 return TRUE;
                                 break;
+#endif
 
 #if defined(MOUSE_ENABLE) && !defined(MOUSE_SHARED_EP)
                             case MOUSE_INTERFACE:
@@ -615,10 +623,12 @@ static bool usb_request_hook_cb(USBDriver *usbp) {
                         break;
 
                     case HID_GET_PROTOCOL:
+#ifndef DISABLE_KEYBOARD_HID
                         if ((usbp->setup[4] == KEYBOARD_INTERFACE) && (usbp->setup[5] == 0)) { /* wIndex */
                             usbSetupTransfer(usbp, &keyboard_protocol, 1, NULL);
                             return TRUE;
                         }
+#endif
                         break;
 
                     case HID_GET_IDLE:
@@ -630,9 +640,12 @@ static bool usb_request_hook_cb(USBDriver *usbp) {
 
             case USB_RTYPE_DIR_HOST2DEV:
                 switch (usbp->setup[1]) { /* bRequest */
+#if !defined(DISABLE_KEYBOARD_HID) || (defined(SHARED_EP_ENABLE) && !defined(KEYBOARD_SHARED_EP))
                     case HID_SET_REPORT:
                         switch (usbp->setup[4]) { /* LSB(wIndex) (check MSB==0?) */
+#ifndef DISABLE_KEYBOARD_HID
                             case KEYBOARD_INTERFACE:
+#endif
 #if defined(SHARED_EP_ENABLE) && !defined(KEYBOARD_SHARED_EP)
                             case SHARED_INTERFACE:
 #endif
@@ -641,8 +654,10 @@ static bool usb_request_hook_cb(USBDriver *usbp) {
                                 break;
                         }
                         break;
+#endif
 
                     case HID_SET_PROTOCOL:
+#ifndef DISABLE_KEYBOARD_HID
                         if ((usbp->setup[4] == KEYBOARD_INTERFACE) && (usbp->setup[5] == 0)) { /* wIndex */
                             keyboard_protocol = ((usbp->setup[2]) != 0x00);                    /* LSB(wValue) */
 #ifdef NKRO_ENABLE
@@ -657,6 +672,7 @@ static bool usb_request_hook_cb(USBDriver *usbp) {
                                 osalSysUnlockFromISR();
                             }
                         }
+#endif
                         usbSetupTransfer(usbp, NULL, 0, NULL);
                         return TRUE;
                         break;
@@ -813,9 +829,11 @@ static void keyboard_idle_timer_cb(void *arg) {
     if (keyboard_idle && keyboard_protocol) {
 #endif /* NKRO_ENABLE */
         /* TODO: are we sure we want the KBD_ENDPOINT? */
+#ifndef DISABLE_KEYBOARD_HID
         if (!usbGetTransmitStatusI(usbp, KEYBOARD_IN_EPNUM)) {
             usbStartTransmitI(usbp, KEYBOARD_IN_EPNUM, (uint8_t *)&keyboard_report_sent, KEYBOARD_EPSIZE);
         }
+#endif
         /* rearm the timer */
         chVTSetI(&keyboard_idle_timer, 4 * TIME_MS2I(keyboard_idle), keyboard_idle_timer_cb, (void *)usbp);
     }
@@ -831,6 +849,9 @@ uint8_t keyboard_leds(void) { return keyboard_led_state; }
 /* prepare and start sending a report IN
  * not callable from ISR or locked state */
 void send_keyboard(report_keyboard_t *report) {
+#ifdef DISABLE_KEYBOARD_HID
+    return;
+#else
     osalSysLock();
     if (usbGetDriverStateI(&USB_DRIVER) != USB_ACTIVE) {
         goto unlock;
@@ -887,6 +908,7 @@ void send_keyboard(report_keyboard_t *report) {
 
 unlock:
     osalSysUnlock();
+#endif
 }
 
 /* ---------------------------------------------------------
@@ -1091,109 +1113,112 @@ void raw_hid_task(void) {
 
 #ifdef MIDI_ENABLE
 
-struct MYLED LED_OVERRIDES[DRIVER_LED_TOTAL] = {0};
+bool LED_OVERRIDES[DRIVER_LED_TOTAL] = {0};
+uint8_t LED_BELLOWS = 0;
+volatile bool trikl_midi_message_received = false;
+
+// Debug: count MIDI packets received to verify data flow
+volatile uint8_t midi_debug_counter = 0;
+// Debug: pulse width counter for LED0 heartbeat (consumed in rgb effect)
+volatile uint8_t midi_debug_pulse = 0;
+// Debug: last decoded MIDI fields for parser inspection
+volatile uint8_t midi_debug_last_status = 0;
+volatile uint8_t midi_debug_last_command = 0;
+volatile uint8_t midi_debug_last_channel = 0;
+volatile uint8_t midi_debug_last_note = 0;
+volatile uint8_t midi_debug_last_value = 0;
+
 void send_midi_packet(MIDI_EventPacket_t *event) { chnWrite(&drivers.midi_driver.driver, (uint8_t *)event, sizeof(MIDI_EventPacket_t)); }
 
-bool recv_midi_packet(MIDI_EventPacket_t *const event) {
-    size_t size = chnReadTimeout(&drivers.midi_driver.driver, (uint8_t *)event, sizeof(MIDI_EventPacket_t), TIME_IMMEDIATE);
-	
-		             if (size > 0) {
-						 /*LED_OVERRIDES[0].B = event->Event&0xF0;
-						 if (event->Event == 0x8) LED_OVERRIDES[0].G = 255;
-						 if (event->Event == 0x80) LED_OVERRIDES[1].G = 255;
-						 if (event->Event == 0x9) LED_OVERRIDES[0].R = 255;
-						 if (event->Event == 0x90) LED_OVERRIDES[1].R = 255;
-						 LED_OVERRIDES[2].B = LED_OVERRIDES[2].B+64;
-						 LED_OVERRIDES[3].R = event->Event&0x0F;//seruruna 8 eo 9
-						 LED_OVERRIDES[4].G = event->Data2;
-						 LED_OVERRIDES[5].G = event->Data3;//velocity
-						 LED_OVERRIDES[6].G = event->Data1;
-						 LED_OVERRIDES[7].B = LED_OVERRIDES[8].B+1;*/
-						 //if (size > 0) {
-						 if (event->Event == 0x9) { //noteon
-							 if ((event->Data1 & 0x0F) == 0) {//channel 0, opening bellow, red
-								 LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].R = 255;//event->Data3;
-								 LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].G = 0;
-							 } else {//closing below green
-								LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].G = 255;//event->Data3;
-								LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].R = 0;
-							 }
-						 } else if (event->Event == 0x8) {	//noteoff						 
-							 LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].R = 0;
-							 LED_OVERRIDES[event->Data2 % (DRIVER_LED_TOTAL-1)].G = 0;
-						 
-						 } else if (event->Event == 0xB) {	//all off
-						    for (int i = 0; i<DRIVER_LED_TOTAL; i++) {
-								LED_OVERRIDES[i].R = 0;
-								LED_OVERRIDES[i].G = 0;
-								LED_OVERRIDES[i].B = 0;
-							}
-						 } /*else {//other kind of midi message received
-							 //LED_OVERRIDES[13].R = LED_OVERRIDES[0].R + 64;//bestelako midi mensajekin gorrie 
-						 }*/
-						 //LED_OVERRIDES[0].B = LED_OVERRIDES[0].B + 64; //zeoze jasotzean bakoitzen urdin intensidadea kanbiatu
-					 }
-    return size == sizeof(MIDI_EventPacket_t);
-}
+// Registered as midi_device.input_catchall_callback — called once per complete decoded MIDI message.
+// byte0 = full MIDI status (command | channel), byte1 = note/CC number, byte2 = velocity/value.
+void trikl_midi_catchall_cb(MidiDevice *device, uint16_t cnt, uint8_t byte0, uint8_t byte1, uint8_t byte2) {
+    (void)device;
+    (void)cnt;
 
-void midi_ep_task(void) {
-    uint8_t buffer[MIDI_STREAM_EPSIZE];
-    size_t  size = 0;
-    do {
-		//MIDI_EventPacket_t event;
-		size = chnReadTimeout(&drivers.midi_driver.driver, buffer, sizeof(buffer), TIME_IMMEDIATE);
+    // Latch once any decoded MIDI message is received.
+    trikl_midi_message_received = true;
 
-        //size = recv_midi_packet(&event);//chnReadTimeout(&drivers.midi_driver.driver, buffer, sizeof(buffer), TIME_IMMEDIATE);
-        
-		if (size > 0) {
-            MIDI_EventPacket_t event;
-            recv_midi_packet(&event);
-            //////////////////////////MIDI_EventPacket_t event;
-            /////////////////////////recv_midi_packet(&event);
-			//XAM hemen dettu berko litzeke funtzio bati jasotako mezun arabera argik kontrolatzettuna. event jasoko luke, eo igual zuzenen event.Data1 event-Data2 ta event.Data3
-			//rgb_matrix_disable_noeeprom();//XAM debug: check if it is receiving from STB, if it does it will disable leds!
-			//turn on LED in row data1 and col data2 with color Data3
-		     //LED_OVERRIDES[0][6]=1;//rgb_matrix_set_color(event.Data3, 255, 0, 0);
-			 //TODO: 
-			 //if (event.Event == MIDI_EVENT(0, MIDI_COMMAND_NOTE_ON)) {
-				 
-        //uint8_t row = i % MATRIX_ROWS;
-        //uint8_t col = i / MATRIX_ROWS;
-				 //if ((event.Data1 % (DRIVER_LED_TOTAL-1)) < DRIVER_LED_TOTAL) {
-					 
-		             /*LED_OVERRIDES[3].R = buffer[0];
-		             LED_OVERRIDES[3].G = buffer[1];
-		             LED_OVERRIDES[3].B = buffer[2];
-		             LED_OVERRIDES[4].R = buffer[3];
-		             LED_OVERRIDES[4].G = buffer[4];
-		             LED_OVERRIDES[4].B = buffer[5];
-		             LED_OVERRIDES[5].R = buffer[6];
-		             LED_OVERRIDES[5].G = buffer[7];
-		             LED_OVERRIDES[5].B = buffer[8];
-		             LED_OVERRIDES[6].R = buffer[9];
-		             LED_OVERRIDES[6].G = buffer[10];
-		             LED_OVERRIDES[6].B = buffer[11];*/
-		             /*LED_OVERRIDES[7].R = buffer[10];
-		             LED_OVERRIDES[7].G = buffer[11];
-		             LED_OVERRIDES[7].B = buffer[12];
-		             LED_OVERRIDES[8].R = buffer[13];
-		             LED_OVERRIDES[8].G = buffer[14];
-		             LED_OVERRIDES[8].B = buffer[15];
-		             LED_OVERRIDES[9].R = buffer[16];
-		             LED_OVERRIDES[9].G = buffer[17];
-		             LED_OVERRIDES[9].B = buffer[18];
-		             LED_OVERRIDES[10].R = buffer[19];
-		             LED_OVERRIDES[11].G = buffer[20];
-		             LED_OVERRIDES[12].B = buffer[21];*/
-					 
-				 //}//rgb_matrix_set_color(event.Data3, 255, 0, 0);
-				 //Channel %d,               Pitch %d, Velocity 
-				 //(MIDIEvent.Data1 & 0x0F   Data2     Data3
-			 //}
-			//TODO: keep track of all pressed buttons, and when bellow switch, change color of pressed buttons
+    // Debug
+    midi_debug_counter++;
+    if (midi_debug_pulse < 240) {
+        midi_debug_pulse += 16;
+    } else {
+        midi_debug_pulse = 255;
+    }
+
+    uint8_t command    = byte0 & 0xF0;
+    uint8_t channel    = byte0 & 0x0F;
+    uint8_t cc_or_note = byte1;
+    uint8_t value      = byte2;
+
+    midi_debug_last_status  = byte0;
+    midi_debug_last_command = command;
+    midi_debug_last_channel = channel;
+    midi_debug_last_note    = cc_or_note;
+    midi_debug_last_value   = value;
+
+    // Note Off (0x80)
+    if (command == 0x80) {
+        uint8_t led_idx = cc_or_note;
+        if (led_idx < DRIVER_LED_TOTAL) {
+            LED_OVERRIDES[led_idx] = 0;
         }
-    } while (size > 0);
+    }
+    // CC (0xB0) number 123 — used as clear-all LEDs signal
+    else if (command == 0xB0 && cc_or_note == 123) {
+        for (int i = 0; i < DRIVER_LED_TOTAL; i++) {
+            LED_OVERRIDES[i] = 0;
+        }
+    }
+    // CC (0xB0) 14-15 — used as below pull/push
+    else if (command == 0xB0 && channel == 14) {
+        LED_BELLOWS = 0; //pulling
+    }
+    else if (command == 0xB0 && channel == 15) {
+        LED_BELLOWS = 1; //pushing
+    }
+    else if (command == 0x90) {
+        uint8_t led_idx = cc_or_note;
+        if (led_idx < DRIVER_LED_TOTAL) {
+            if (channel == 0 || channel == 2) {
+                LED_BELLOWS = 0; //pulling
+            } else if (channel == 1 || channel == 3) {
+                LED_BELLOWS = 1; //pushing
+            }
+            LED_OVERRIDES[led_idx] = (value > 0) ? 1 : 0;
+        }
+    }
 }
+
+bool recv_midi_packet(MIDI_EventPacket_t *const event) {
+    // Keep partial packet bytes across calls so fragmented USB reads are not dropped.
+    static uint8_t partial[sizeof(MIDI_EventPacket_t)];
+    static size_t  partial_len = 0;
+
+    while (partial_len < sizeof(MIDI_EventPacket_t)) {
+        // Non-blocking when idle, but briefly wait to complete an in-progress packet.
+        // This avoids a visible "one packet late" effect when reads are fragmented (e.g. 3+1 bytes).
+        const sysinterval_t timeout = (partial_len == 0) ? TIME_IMMEDIATE : TIME_MS2I(1);
+        size_t got = chnReadTimeout(&drivers.midi_driver.driver, partial + partial_len, sizeof(MIDI_EventPacket_t) - partial_len, timeout);
+
+        if (got == 0) {
+            // No more bytes available now; keep partial for next call.
+            return false;
+        }
+
+        partial_len += got;
+    }
+
+    event->Event = partial[0];
+    event->Data1 = partial[1];
+    event->Data2 = partial[2];
+    event->Data3 = partial[3];
+    partial_len  = 0;
+
+    return true;
+}
+
 #endif
 
 #ifdef VIRTSER_ENABLE

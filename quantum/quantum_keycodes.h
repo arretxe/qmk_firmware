@@ -1045,6 +1045,115 @@ enum quantum_keycodes {
     MI5_Bb_5 = MI5_As_5,
     MI5_B_5,  // 5C76
 	
+	    // MIDI additionals repeated
+	    MI6_C_0,   // 5C2F
+    MI6_Cs_0,  // 5C30
+    MI6_Db_0 = MI6_Cs_0,
+    MI6_D_0,   // 5C31
+    MI6_Ds_0,  // 5C32
+    MI6_Eb_0 = MI6_Ds_0,
+    MI6_E_0,   // 5C33
+    MI6_F_0,   // 5C34
+    MI6_Fs_0,  // 5C35
+    MI6_Gb_0 = MI6_Fs_0,
+    MI6_G_0,   // 5C36
+    MI6_Gs_0,  // 5C37
+    MI6_Ab_0 = MI6_Gs_0,
+    MI6_A_0,   // 5C38
+    MI6_As_0,  // 5C39
+    MI6_Bb_0 = MI6_As_0,
+    MI6_B_0,  // 5C3A
+
+    MI6_C_1,   // 5C3B
+    MI6_Cs_1,  // 5C3C
+    MI6_Db_1 = MI6_Cs_1,
+    MI6_D_1,   // 5C3D
+    MI6_Ds_1,  // 5C3E
+    MI6_Eb_1 = MI6_Ds_1,
+    MI6_E_1,   // 5C3F
+    MI6_F_1,   // 5C40
+    MI6_Fs_1,  // 5C41
+    MI6_Gb_1 = MI6_Fs_1,
+    MI6_G_1,   // 5C42
+    MI6_Gs_1,  // 5C43
+    MI6_Ab_1 = MI6_Gs_1,
+    MI6_A_1,   // 5C44
+    MI6_As_1,  // 5C45
+    MI6_Bb_1 = MI6_As_1,
+    MI6_B_1,  // 5C46
+
+    MI6_C_2,   // 5C47
+    MI6_Cs_2,  // 5C48
+    MI6_Db_2 = MI6_Cs_2,
+    MI6_D_2,   // 5C49
+    MI6_Ds_2,  // 5C4A
+    MI6_Eb_2 = MI6_Ds_2,
+    MI6_E_2,   // 5C4B
+    MI6_F_2,   // 5C4C
+    MI6_Fs_2,  // 5C4D
+    MI6_Gb_2 = MI6_Fs_2,
+    MI6_G_2,   // 5C4E
+    MI6_Gs_2,  // 5C4F
+    MI6_Ab_2 = MI6_Gs_2,
+    MI6_A_2,   // 5C50
+    MI6_As_2,  // 5C51
+    MI6_Bb_2 = MI6_As_2,
+    MI6_B_2,  // 5C52
+
+    MI6_C_3,   // 5C53
+    MI6_Cs_3,  // 5C54
+    MI6_Db_3 = MI6_Cs_3,
+    MI6_D_3,   // 5C55
+    MI6_Ds_3,  // 5C56
+    MI6_Eb_3 = MI6_Ds_3,
+    MI6_E_3,   // 5C57
+    MI6_F_3,   // 5C58
+    MI6_Fs_3,  // 5C59
+    MI6_Gb_3 = MI6_Fs_3,
+    MI6_G_3,   // 5C5A
+    MI6_Gs_3,  // 5C5B
+    MI6_Ab_3 = MI6_Gs_3,
+    MI6_A_3,   // 5C5C
+    MI6_As_3,  // 5C5D
+    MI6_Bb_3 = MI6_As_3,
+    MI6_B_3,  // 5C5E
+
+    MI6_C_4,   // 5C5F
+    MI6_Cs_4,  // 5C60
+    MI6_Db_4 = MI6_Cs_4,
+    MI6_D_4,   // 5C61
+    MI6_Ds_4,  // 5C62
+    MI6_Eb_4 = MI6_Ds_4,
+    MI6_E_4,   // 5C63
+    MI6_F_4,   // 5C64
+    MI6_Fs_4,  // 5C65
+    MI6_Gb_4 = MI6_Fs_4,
+    MI6_G_4,   // 5C66
+    MI6_Gs_4,  // 5C67
+    MI6_Ab_4 = MI6_Gs_4,
+    MI6_A_4,   // 5C68
+    MI6_As_4,  // 5C69
+    MI6_Bb_4 = MI6_As_4,
+    MI6_B_4,  // 5C6A
+
+    MI6_C_5,   // 5C6B
+    MI6_Cs_5,  // 5C6C
+    MI6_Db_5 = MI6_Cs_5,
+    MI6_D_5,   // 5C6D
+    MI6_Ds_5,  // 5C6E
+    MI6_Eb_5 = MI6_Ds_5,
+    MI6_E_5,   // 5C6F
+    MI6_F_5,   // 5C70S
+    MI6_Fs_5,  // 5C71
+    MI6_Gb_5 = MI6_Fs_5,
+    MI6_G_5,   // 5C72
+    MI6_Gs_5,  // 5C73
+    MI6_Ab_5 = MI6_Gs_5,
+    MI6_A_5,   // 5C74
+    MI6_As_5,  // 5C75
+    MI6_Bb_5 = MI6_As_5,
+    MI6_B_5,  // 5C76
+	
 	//////////////////////////////////////////////////
 	
 	TRIKL_REG_TGL,//registroa habilitatu/deshabilitatzeko
@@ -1054,7 +1163,11 @@ enum quantum_keycodes {
 	TRIKL_DRUM_TGL,// habilitatu/deshabilitatzeko
 	TRIKL_DRUM_ON,// habilitatzeko
 	TRIKL_DRUM_OFF,// deshabilitatzeko
-  TRIKL_ALT_TGL,//MIDI kanal alternatibok, instrumentuz aldatzeko
+    TRIKL_ALT_TGL,//MIDI kanal alternatibok, instrumentuz aldatzeko
+    PC_UP_1,//Programm change increment 1
+    PC_DN_1,//Programm change decrement 1
+    PC_UP_10,//Programm change increment 10
+    PC_DN_10,//Programm change decrement 10
 	SAFE_RANGE
 };
 
@@ -1366,6 +1479,8 @@ enum quantum_keycodes {
 #define MIDI4_TONE_MAX MI4_B_5 //XAM
 #define MIDI5_TONE_MIN MI5_C_0 //XAM 7th 
 #define MIDI5_TONE_MAX MI5_B_5 //XAM
+#define MIDI6_TONE_MIN MI6_C_0 //XAM maj&min
+#define MIDI6_TONE_MAX MI6_B_5 //XAM
 #define MIDI_OCTAVE_MIN MI_OCT_N2
 #define MIDI_OCTAVE_MAX MI_OCT_7
 //#define MIDI_OCTAVE_MAX MI_OCT_6

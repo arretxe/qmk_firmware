@@ -123,6 +123,9 @@ static void cc_callback(MidiDevice* device, uint8_t chan, uint8_t num, uint8_t v
 
 void midi_init(void);
 
+// Defined in usb_main.c — updates LED_OVERRIDES based on received MIDI messages.
+void trikl_midi_catchall_cb(MidiDevice *device, uint16_t cnt, uint8_t byte0, uint8_t byte1, uint8_t byte2);
+
 void setup_midi(void) {
 #ifdef MIDI_ADVANCED
     midi_init();
@@ -132,4 +135,5 @@ void setup_midi(void) {
     midi_device_set_pre_input_process_func(&midi_device, usb_get_midi);
     midi_register_fallthrough_callback(&midi_device, fallthrough_callback);
     midi_register_cc_callback(&midi_device, cc_callback);
+    midi_device.input_catchall_callback = trikl_midi_catchall_cb;
 }

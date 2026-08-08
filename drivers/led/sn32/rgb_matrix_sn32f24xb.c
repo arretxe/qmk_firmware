@@ -51,7 +51,8 @@
 */
 static uint8_t chan_col_order[LED_MATRIX_COLS] = {0}; // track the channel col order
 static uint8_t current_row = 0; // LED row scan counter
-static uint8_t row_idx = 0; // key row scan counter
+static uint8_t row_idx = 0; // key row scan counter (tied to LED config)
+static uint8_t key_row_idx = 0; // independent key matrix row scan counter
 extern matrix_row_t raw_matrix[MATRIX_ROWS]; //raw values
 static const uint32_t periodticks = 256;
 //XAM TODO freq hoi haunditzeko era txukunen
@@ -337,8 +338,12 @@ void rgb_callback(PWMDriver *pwmp) {
     shared_matrix_rgb_disable_leds();
     shared_matrix_rgb_disable_pwm();
     #if(DIODE_DIRECTION == COL2ROW) //AK33 rev2
-        // Scan the key matrix row
-        matrix_scan_keys(raw_matrix, row_idx);
+        // Scan ALL 6 key matrix rows per interrupt for 1250Hz scan rate
+        for (uint8_t i = 0; i < 6; i++) {
+            matrix_scan_keys(raw_matrix, key_row_idx);
+            key_row_idx++;
+            if (key_row_idx >= MATRIX_ROWS) key_row_idx = 0;
+        }
     #endif
     update_pwm_channels(pwmp);
     if(enable_pwm) writePinHigh(led_row_pins[current_row]);

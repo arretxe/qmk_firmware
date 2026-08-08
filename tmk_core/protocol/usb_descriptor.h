@@ -56,10 +56,12 @@ typedef struct {
     USB_Descriptor_Configuration_Header_t Config;
 
 #ifndef KEYBOARD_SHARED_EP
+#ifndef DISABLE_KEYBOARD_HID
     // Keyboard HID Interface
     USB_Descriptor_Interface_t Keyboard_Interface;
     USB_HID_Descriptor_HID_t   Keyboard_HID;
     USB_Descriptor_Endpoint_t  Keyboard_INEndpoint;
+#endif
 #else
     // Shared Interface
     USB_Descriptor_Interface_t Shared_Interface;
@@ -149,7 +151,9 @@ typedef struct {
  */
 enum usb_interfaces {
 #ifndef KEYBOARD_SHARED_EP
+#ifndef DISABLE_KEYBOARD_HID
     KEYBOARD_INTERFACE,
+#endif
 #else
     SHARED_INTERFACE,
 #    define KEYBOARD_INTERFACE SHARED_INTERFACE
@@ -203,7 +207,9 @@ enum usb_endpoints {
     __unused_epnum__ = NEXT_EPNUM,  // Endpoint numbering starts at 1
 
 #ifndef KEYBOARD_SHARED_EP
+#ifndef DISABLE_KEYBOARD_HID
     KEYBOARD_IN_EPNUM = NEXT_EPNUM,
+#endif
 #else
 #    define KEYBOARD_IN_EPNUM SHARED_IN_EPNUM
 #endif

@@ -159,7 +159,6 @@ void keyboard_post_init_user(void) {
 
 extern rgb_config_t rgb_matrix_config;
 void rgb_matrix_indicators_user() {
-	if (IS_LAYER_ON(_BASE)) {
      //TODO: for x check the table and turn leds accordingly
 		for (uint8_t i = 0;  i < DRIVER_LED_TOTAL; i++) {
 			//if (LED_OVERRIDES[i] == 1){
@@ -173,4 +172,3 @@ void rgb_matrix_indicators_user() {
 			}
 		}
 	}
-}

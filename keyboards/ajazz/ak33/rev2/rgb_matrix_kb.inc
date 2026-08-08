@@ -1,9 +1,10 @@
   // Add your new core rgb matrix effect here, order determines enum order
  
-
 #if defined(TRIKL_RGB)
   RGB_MATRIX_EFFECT(TRIKL_SOLID)
   #ifdef RGB_MATRIX_CUSTOM_EFFECT_IMPLS
+
+  #include "process_midi.h"
 
 /* #if defined(TRIKL_IX10_T)
 const bool LED_MASK[MATRIX_ROWS][MATRIX_COLS] = {
@@ -60,49 +61,45 @@ const bool LED_MASK[MATRIX_ROWS][MATRIX_COLS] = {
 #endif */
 
 extern uint8_t below_press_num;
+extern volatile uint8_t midi_debug_counter;
+extern volatile uint8_t midi_debug_pulse;
+
 bool TRIKL_SOLID(effect_params_t* params) {
     RGB_MATRIX_USE_LIMITS(led_min, led_max);
-    //RGB rgb = rgb_matrix_hsv_to_rgb(rgb_matrix_config.hsv);
-	//RGB rgb = hsv_to_rgb(rgb_matrix_config.hsv);
-    for (uint8_t i = 0; i < DRIVER_LED_TOTAL; i++) {
-        //uint8_t row = i % MATRIX_ROWS;
-        //uint8_t col = i / MATRIX_ROWS;
-        //RGB_MATRIX_TEST_LED_FLAGS();
-			
+    
+    for (uint8_t i = led_min; i < led_max; i++) {
+        // Check if this LED is in an active key range for this product variant
+        bool is_key_led = false;
+        
 #if defined(TRIKL_IX10_T)   //r1        r2                                  r4                  r5                  r6=space
-		if ((i<=13) || (i>=17 && i<=27) ||                     (i>=49 && i<=54) || (i>=62 && i<=67) || (i==76)) {
+        is_key_led = ((i<=13) || (i>=17 && i<=27) ||                     (i>=49 && i<=54) || (i>=62 && i<=67) || (i==76));
 #elif defined(TRIKL_IX11_T) //r1        r2             r3                    r4                  r5           r6=space
-		if ((i<=12) || (i>=16 && i<=27) || (i>=31 && i<=42) || (i>=49 && i<=54) || (i>=62 && i<=67) || (i==76)) {
+        is_key_led = ((i<=12) || (i>=16 && i<=27) || (i>=31 && i<=42) || (i>=49 && i<=54) || (i>=62 && i<=67) || (i==76));
 #elif defined(TRIKL_IX11CR_T) //r1        r2             r3                    r4                  r5           r6=space
-		if ((i<=12) || (i>=16 && i<=27) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69) || (i==76)) {
+        is_key_led = ((i<=12) || (i>=16 && i<=27) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69) || (i==76));
 #elif defined(TRIKL_IXLR_T) //r1   r2             r3                    r4                  r5           r6=space
-		if ((i<=13) || (i>=16 && i<=28) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69) || (i==76)) {
+        is_key_led = ((i<=13) || (i>=16 && i<=28) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69) || (i==76));
 #elif defined(TRIKL_IXLL_T) //r1   r2             r3                    r4                  r5           r6=space
-		if ((i<=13) || (i>=16 && i<=28) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69) || (i==76)) {
-#else
-	#error "Unexpected PRODUCT!"
+        is_key_led = ((i<=13) || (i>=16 && i<=28) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69) || (i==76));
 #endif
 
-
-	    //if ((i>=17 && i<=27) || (i>=49 && i<=54) || (i>=62 && i<=67) || (i==76)) {
-			rgb_matrix_set_color(i, LED_OVERRIDES[i].R, LED_OVERRIDES[i].G, LED_OVERRIDES[i].B);
-		} else if (i != TRANS_BUT_NUM){//don't light the transpose button
-		//} else if (i > 13 && i != TRANS_BUT_NUM){
-			if (below_press_num != 0) 
-				rgb_matrix_set_color(i, 255-LED_OVERRIDES[76].G, 255, LED_OVERRIDES[76].B);//when below pressed force green on
-			else
-				rgb_matrix_set_color(i, 255-LED_OVERRIDES[76].G, LED_OVERRIDES[76].G, LED_OVERRIDES[76].B);
-		//rgb_matrix_set_color(i, 0, 0, 0);
-		}
-		/*if (LED_MASK[row][col] == 0) {//XAM: if unmasked, apply solid color
-            //rgb_matrix_set_color(i, rgb.r, rgb.g, rgb.b);
-			rgb_matrix_set_color(i, LED_OVERRIDES[i].R, LED_OVERRIDES[i].G, LED_OVERRIDES[i].B);
-		} else { //masked ones are off (can be turned on by override)
-            rgb_matrix_set_color(i, rgb.r, rgb.g, rgb.b);
-            //rgb_matrix_set_color(i, 0, 0, 0);
-		}*/
+        if (is_key_led) {
+          if (LED_OVERRIDES[i]) {
+            rgb_matrix_set_color(i, LED_BELLOWS ? 0 : 255, LED_BELLOWS ? 255 : 0, 0);
+          } else {
+            rgb_matrix_set_color(i, 0, 0, 0);
+          }
+        } else if (i != TRANS_BUT_NUM) {
+            if (below_press_num != 0 || LED_BELLOWS) {
+                // Bellow pressed: bright green
+            rgb_matrix_set_color(i, 0, 255, 0);
+            } else {
+            rgb_matrix_set_color(i, 255, 0, 0);
+            }
+        }
     }
-    return 1;//rgb_matrix_check_finished_leds(led_max);
+    
+    return rgb_matrix_check_finished_leds(led_max);
 }
 
   #endif // RGB_MATRIX_CUSTOM_EFFECT_IMPLS
