@@ -69,27 +69,15 @@ bool TRIKL_SOLID(effect_params_t* params) {
     
     for (uint8_t i = led_min; i < led_max; i++) {
         // Check if this LED is in an active key range for this product variant
-        bool is_key_led = false;
-        
-#if defined(TRIKL_IX10_T)   //r1        r2                                  r4                  r5                  r6=space
-        is_key_led = ((i<=13) || (i>=17 && i<=27) ||                     (i>=49 && i<=54) || (i>=62 && i<=67) || (i==76));
-#elif defined(TRIKL_IX11_T) //r1        r2             r3                    r4                  r5           r6=space
-        is_key_led = ((i<=12) || (i>=16 && i<=27) || (i>=31 && i<=42) || (i>=49 && i<=54) || (i>=62 && i<=67) || (i==76));
-#elif defined(TRIKL_IX11CR_T) //r1        r2             r3                    r4                  r5           r6=space
-        is_key_led = ((i<=12) || (i>=16 && i<=27) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69) || (i==76));
-#elif defined(TRIKL_IXLR_T) //r1   r2             r3                    r4                  r5           r6=space
-        is_key_led = ((i<=13) || (i>=16 && i<=28) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69) || (i==76));
-#elif defined(TRIKL_IXLL_T) //r1   r2             r3                    r4                  r5           r6=space
-        is_key_led = ((i<=13) || (i>=16 && i<=28) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69) || (i==76));
-#endif
+        extern bool is_key_led(uint8_t i);
 
-        if (is_key_led) {
+        if (is_key_led(i)) {
           if (LED_OVERRIDES[i]) {
             rgb_matrix_set_color(i, LED_BELLOWS ? 0 : 255, LED_BELLOWS ? 255 : 0, 0);
           } else {
             rgb_matrix_set_color(i, 0, 0, 0);
           }
-        } else if (i != TRANS_BUT_NUM) {
+        } else if (i != TRANS_BUT_NUM ) {
             if (below_press_num != 0 || LED_BELLOWS) {
                 // Bellow pressed: bright green
             rgb_matrix_set_color(i, 0, 255, 0);

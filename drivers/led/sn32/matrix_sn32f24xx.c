@@ -71,59 +71,47 @@ static const pin_t row_pins[MATRIX_ROWS] = MATRIX_ROW_PINS;
 static const pin_t col_pins[MATRIX_COLS] = MATRIX_COL_PINS;
 
 
-#if defined(TRIKL_IX10_T)
- const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
-  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
-  {  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
-  {  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
-  {  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1 },
-  {  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  1 },
-  {  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  1 },
-  {  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
-  };
-#elif defined(TRIKL_IX11_T)
- const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
-  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
-  {  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  1 },
-  {  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  1 },
-  {  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  1 },
-  {  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
-  };
-#elif defined(TRIKL_IX11CR_T)
- const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
-  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
-  {  1,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
-  {  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
-  {  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
-  };
-#elif defined(TRIKL_IXLR_T)
- const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
-  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
-  {  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  1 },
-  {  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
-  };
-#elif defined(TRIKL_IXLL_T)
- const bool USED_KEYS[MATRIX_ROWS][MATRIX_COLS] = {
-  /* 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15  */
-  {  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1 },
-  {  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  1 },
-  {  1,  0,  0,  0,  0,  0,  1,  0,  0,  0,  1,  0,  0,  0,  0,  1 }
-  };
-#else
-	#error "Unexpected PRODUCT!"
+// Función externa definida en keymap.c para identificar qué teclas son notas musicales según la variante activa
+extern bool is_key_led(uint8_t i);
+#ifdef RGB_MATRIX_ENABLE
+extern led_config_t g_led_config;
 #endif
+
+/**
+ * Determina si una tecla física (row, col) está en uso en el instrumento actual.
+ * Evita escanear pines de pulsadores no conectados o no utilizados.
+ *
+ * Incluye:
+ * 1. Teclas musicales: identificadas dinámicamente mediante is_key_led(led_index).
+ * 2. Botones de control y funciones:
+ *    - Columna 15: Botones laterales derechos (Octava, Transposición, Registro, etc.).
+ *    - Fila 5, columnas 6 y 10: Barra espaciadora y botones de fuelle (MOBELOW).
+ *    - Fila 0, columna 0: Tecla ESC / FUNC.
+ *    - Variantes específicas (IXLL, IX10, IXLR): Teclas adicionales de función/bajos.
+ */
+static inline bool is_key_used(uint8_t row, uint8_t col) {
+#ifdef RGB_MATRIX_ENABLE
+    // Comprobar si la tecla pertenece al grupo de notas musicales de esta variante
+    uint8_t led = g_led_config.matrix_co[row][col];
+    if (led != NO_LED && is_key_led(led)) {
+        return true;
+    }
+#endif
+    // Botones de función fijos comunes a todos los modelos
+    if (col == 15) return true;                           // Columna derecha (Octavas, Transpose, Registro)
+    if (row == 5 && (col == 6 || col == 10)) return true; // Fuelle / Espacio (MOBELOW)
+    if (row == 0 && col == 0) return true;                // Tecla ESC / FUNC
+
+    // Teclas específicas según el modelo de instrumento
+#if defined(TRIKL_IXLL_T)
+    if (row == 5 && col == 0) return true;
+#endif
+#if defined(TRIKL_IX10_T) || defined(TRIKL_IXLR_T) || defined(TRIKL_IXLL_T)
+    if (row == 0 && col == 1) return true;
+#endif
+
+    return false;
+}
 
 
 
@@ -277,8 +265,7 @@ void matrix_scan_keys(matrix_row_t raw_matrix[], uint8_t current){
 			sample_delay(); //wait after selection
 			for (uint8_t col_index = 1; col_index <= MATRIX_COLS; col_index++) {
 				// Check row pin state unless NO_PIN
-				//if (col_pins[col_index] != NO_PIN) {//XAM instead of pins, define unsued keys
-				if (USED_KEYS[row_index][MATRIX_COLS-col_index] == 1){//check only if used, else skip it
+				if (is_key_used(row_index, MATRIX_COLS - col_index)) {//check only if used, else skip it
 				  //TODO chek if its space button, if it is and has changed since last check, report that all keys need to be released
 				  /*if (row_index == 5 && col_index == 6) {
 						if last_matrix[row_index] = raw_matrix[row_index];

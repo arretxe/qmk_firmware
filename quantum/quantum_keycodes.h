@@ -1164,12 +1164,21 @@ enum quantum_keycodes {
 	TRIKL_DRUM_ON,// habilitatzeko
 	TRIKL_DRUM_OFF,// deshabilitatzeko
     TRIKL_ALT_TGL,//MIDI kanal alternatibok, instrumentuz aldatzeko
+    TRIKL_EVENT_CC_TGL,// Event CC traffic toggle
+    TRIKL_EVENT_CC_ON,// Event CC traffic enable
+    TRIKL_EVENT_CC_OFF,// Event CC traffic disable
     PC_UP_1,//Programm change increment 1
     PC_DN_1,//Programm change decrement 1
     PC_UP_10,//Programm change increment 10
     PC_DN_10,//Programm change decrement 10
 	SAFE_RANGE
 };
+
+// Aliases for TRIKL Event CC keycodes
+#define TRIKL_EV_CC_TGL TRIKL_EVENT_CC_TGL
+#define TRIKL_EV_CC_ON  TRIKL_EVENT_CC_ON
+#define TRIKL_EV_CC_OFF TRIKL_EVENT_CC_OFF
+#define TRIKL_EVCC_TGL  TRIKL_EVENT_CC_TGL
 
 // Keycode modifiers & aliases
 #define LCTL(kc) (QK_LCTL | (kc))

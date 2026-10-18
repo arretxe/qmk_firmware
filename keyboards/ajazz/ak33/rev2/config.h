@@ -21,12 +21,12 @@
 // Define to remove the default HID keyboard interface to present purely as a MIDI device
 #define DISABLE_KEYBOARD_HID
 
-#define TRIKL_IX10_T //IX10 or IX11 or IX11CR or IXLR or IXLL
+#define TRIKL_IX11_T //IX10 or IX11 or IX11CR or IXLR or IXLL
 #define MIDI_TRIKL //komentatu basikoa bada MIDI kapak ez generatzeko
 #define TRIKL_RGB // define to enable RGB, don't define to disable RGB
 //#define INIT_AS_KB // define this if you want to start as keyboard
 #define DRUMS_POR 0 // power_on value for drums
-#define TRANSPOSE_POR 0 // power_on value for transpose (0=G/C) 3=Bb 5=C 7=D
+#define TRANSPOSE_POR -2 // power_on value for transpose (0=G/C) 3=Bb 5=C 7=D
 #define TRANS_BUT_NUM 14 //Transpose button LED number, to know which LED to assign color to
 
 /* Key-event CC protocol
@@ -45,39 +45,42 @@
  */
 #define TRIKL_EVENT_CC_NUM      102
 #define TRIKL_EVENT_CC_BASE_CH  12
+#define TRIKL_EVENT_CC_POR      0 // 1 = Event CC traffic enabled at boot, 0 = disabled
 #define TRIKL_BELLOW_CC_NUM     103
 #define TRIKL_BELLOW_CC_CH      14
 
 #define MIDI_ADVANCED //MIDI_BASIC
 
+// VID=16D0, PID=154E
 
+  #define PRODUCT_ID      0x154E
 #if defined(TRIKL_IX10_T)
   #define PRODUCT IX10
-  #define PRODUCT_ID      0x5004
+  // #define PRODUCT_ID      0x5004
 #elif defined(TRIKL_IX11_T)
   #define PRODUCT IX11
-  #define PRODUCT_ID      0x5005
+  // #define PRODUCT_ID      0x5005
 #elif defined(TRIKL_IX11CR_T)
   #define PRODUCT IX11CR
-  #define PRODUCT_ID      0x5006
+  // #define PRODUCT_ID      0x5006
 #elif defined(TRIKL_IXLR_T)
   #define PRODUCT IXLR
-  #define PRODUCT_ID      0x5007
+  // #define PRODUCT_ID      0x5007
 #elif defined(TRIKL_IXLL_T)
   #define PRODUCT IXLL
-  #define PRODUCT_ID      0x5008
+  // #define PRODUCT_ID      0x5008
 #else
   #error "unexpected PRODUCT!"
 #endif
 
 /* USB Device descriptor parameter */
-#define VENDOR_ID       0x0C45
+#define VENDOR_ID       0x16D0
 // #define PRODUCT_ID      0x5004
 #define DEVICE_VER      0x0002
 
 #define MANUFACTURER    SoinuTxuri
 
-#define DESCRIPTION     Triklatua
+#define DESCRIPTION     MIDI_accordion
 
 #define USB_MAX_POWER_CONSUMPTION 100 //XAM 500 ustet dala berez aber 100ekin gutxio perlatzeun
 //#define USB_SUSPEND_WAKEUP_DELAY 500 //XAM test2
@@ -135,15 +138,15 @@
 #define RGB_MATRIX_CUSTOM_KB // to enable custom effects too
 #if defined TRIKL_RGB 
 //#define ENABLE_RGB_MATRIX_SOLID_COLOR
-  #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_CUSTOM_TRIKL_SOLID // Sets the default mode, if none has been set
-  #define RGB_MATRIX_FRAMEBUFFER_EFFECTS 
+  #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_RAINBOW_MOVING_CHEVRON // Sets the default mode, if none has been set
+  // #define RGB_MATRIX_FRAMEBUFFER_EFFECTS 
   #define RGB_MATRIX_KEYPRESSES
 //#define RGB_MATRIX_KEYRELEASES // reacts to keyreleases (instead of keypresses)
   #define ENABLE_RGB_MATRIX_SOLID_REACTIVE_SIMPLE     // Pulses keys hit to hue & value then fades value out
   #define ENABLE_RGB_MATRIX_SOLID_REACTIVE            // Static single hue pulses keys hit to shifted hue then fades to current hue
 //#define ENABLE_RGB_MATRIX_TYPING_HEATMAP	//Enables RGB_MATRIX_TYPING_HEATMAP
-  #define RGB_MATRIX_TYPING_HEATMAP_SPREAD 20
-  #define RGB_MATRIX_TYPING_HEATMAP_SLIM
+  // #define RGB_MATRIX_TYPING_HEATMAP_SPREAD 20
+  // #define RGB_MATRIX_TYPING_HEATMAP_SLIM
 //#define ENABLE_RGB_MATRIX_DIGITAL_RAIN
 
   //#define ENABLE_RGB_MATRIX_SOLID_REACTIVE_WIDE       // Hue & value pulse near a single key hit then fades value out

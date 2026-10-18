@@ -49,6 +49,10 @@ bool process_midi(uint16_t keycode, keyrecord_t *record);
 extern bool LED_OVERRIDES[DRIVER_LED_TOTAL];
 extern uint8_t LED_BELLOWS;
 extern volatile bool trikl_midi_message_received;
+extern bool trikl_bellow_swap_suppress_cc;
+extern bool trikl_event_cc_enabled;
+void trikl_event_cc_toggle(void);
+void set_trikl_event_cc(bool on_off);
 
 #        define MIDI_INVALID_NOTE 0xFF
 #        define MIDI_TONE_COUNT (MIDI_TONE_MAX - MIDI_TONE_MIN + 1)

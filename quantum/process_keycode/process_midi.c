@@ -37,7 +37,7 @@ void process_midi_all_notes_off(void) { midi_send_cc(&midi_device, 0, 0x7B, 0); 
 
 
 static uint8_t tone_status[2][MIDI_TONE_COUNT];
-static uint8_t tone_status2[MIDI_TONE_COUNT]; //Bass
+static uint8_t tone_status2[2][MIDI_TONE_COUNT]; //Bass
 static uint8_t tone_status3[MIDI_TONE_COUNT]; //M third
 static uint8_t tone_status4[MIDI_TONE_COUNT]; //m third
 static uint8_t tone_status6[MIDI_TONE_COUNT]; // Maj and Min
@@ -68,12 +68,37 @@ bool keep_bending_down = 0;
 bool keep_bending_up   = 0;
 extern bool bass_mute;
 
+extern uint8_t below_press_num;
+bool trikl_bellow_swap_suppress_cc = false;
+
+#ifndef TRIKL_EVENT_CC_POR
+#    if defined(EVENT_CC_POR)
+#        define TRIKL_EVENT_CC_POR EVENT_CC_POR
+#    else
+#        define TRIKL_EVENT_CC_POR 1
+#    endif
+#endif
+
+bool trikl_event_cc_enabled = TRIKL_EVENT_CC_POR;
+
+void trikl_event_cc_toggle(void) {
+    trikl_event_cc_enabled = !trikl_event_cc_enabled;
+}
+
+void set_trikl_event_cc(bool on_off) {
+    trikl_event_cc_enabled = on_off;
+}
+
 static inline void trikl_send_event_cc_after_note(const keyrecord_t *record) {
 #if defined(TRIKL_EVENT_CC_NUM) && defined(TRIKL_EVENT_CC_BASE_CH)
+    if (!trikl_event_cc_enabled || trikl_bellow_swap_suppress_cc) {
+        return;
+    }
     uint8_t row     = record->event.key.row;
     uint8_t col     = record->event.key.col;
     uint8_t pressed = record->event.pressed ? 1 : 0;
-    uint8_t cc_ch   = TRIKL_EVENT_CC_BASE_CH + pressed;
+    uint8_t bellow  = (below_press_num > 0) ? 2 : 0;
+    uint8_t cc_ch   = TRIKL_EVENT_CC_BASE_CH + bellow + pressed;
     uint8_t cc_val  = row * 16 + col;
     midi_send_cc(&midi_device, cc_ch, TRIKL_EVENT_CC_NUM, cc_val);
 #else
@@ -84,9 +109,11 @@ static inline void trikl_send_event_cc_after_note(const keyrecord_t *record) {
 inline uint8_t compute_velocity(uint8_t setting) { return setting * (128 / (MIDI_VELOCITY_MAX - MIDI_VELOCITY_MIN)); }
 
 void midi_init(void) {
+    drum_mode                       = 0;
+    trikl_event_cc_enabled          = TRIKL_EVENT_CC_POR;
     midi_config.octave              = MI_OCT_0 - MIDI_OCTAVE_MIN;//XAM: MI_OCT_2 - MIDI_OCTAVE_MIN
     midi_config.transpose           = TRANSPOSE_POR;//0 sol, 3 si bemol //XAM TODO: hau config.h-n jarri
-    midi2_config.transpose        = TRANSPOSE_POR;
+    midi2_config.transpose          = TRANSPOSE_POR;
     midi_config.velocity            = 127;//XAM
     midi_config.channel             = 0;
     midi_config.modulation_interval = 8;
@@ -108,6 +135,8 @@ void midi_init(void) {
         tone_statusreg[0][i] = MIDI_INVALID_NOTE;//note without transpositions
         tone_status[1][i] = 0;//number of times it is pressed
         tone_statusreg[1][i] = 0;//number of times it is pressed
+        tone_status2[0][i] = MIDI_INVALID_NOTE;
+        tone_status2[1][i] = 0;
     }
 
     midi_modulation       = 0;
@@ -133,12 +162,12 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
 
   
   
+    bool sent_note_traffic = false;
     switch (keycode) {
         case MIDI_TONE_MIN ... MIDI_TONE_MAX: {
             uint8_t channel  = midi_config.channel + midi_alt*10;
             uint8_t tone     = keycode - MIDI_TONE_MIN;
             uint8_t velocity = midi_config.velocity;
-                        bool sent_note_traffic = false;
             if (record->event.pressed) {
                 uint8_t note = midi_compute_note(keycode);
                 //check if not already pressed
@@ -177,51 +206,48 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                     }
                 }
             }
-            if (sent_note_traffic) {
-                trikl_send_event_cc_after_note(record);
-            }
-            return false;
+            break;
         } //case
 		
 //
 //XAM MIDI2//BASS ROOT
         case MIDI2_TONE_MIN ... MIDI2_TONE_MAX: {
             uint8_t velocity = midi_config.velocity;
-            uint8_t channel  = midi2_config.channel + midi_alt*10;;
+            uint8_t channel  = midi2_config.channel + midi_alt*10;
             uint8_t tone     = keycode - MIDI2_TONE_MIN;
             uint8_t channel_drums  = midi10_config.channel;
-                        bool sent_note_traffic = false;
             if (record->event.pressed) {
-              if (bass_mute == 0) {
+              if (bass_mute == 0) { // dii unless bass mute is set
                 uint8_t note = midi2_compute_note(keycode);
-                tone_status2[tone] = note;
-                midi_send_noteon(&midi_device, channel, note, velocity);
-                                sent_note_traffic = true;
-                if (drums)
-                                    midi_send_noteon(&midi_device, channel_drums, 36, 90);//bass drum
-                                if (drums)
-                                    sent_note_traffic = true;
-                //midi_send_noteon(&midi_device, channel, note+12, 124);
-                dprintf("midi noteon channel:%d note:%d velocity:%d\n", channel, note, velocity);
+                //check if not already pressed
+                if (tone_status2[1][tone] == 0) {//enable the note only if it hasnt already been played
+                  midi_send_noteon(&midi_device, channel, note, velocity);
+                  sent_note_traffic = true;
+                  tone_status2[0][tone] = note;
+                  if (drums && !trikl_bellow_swap_suppress_cc) 
+                    midi_send_noteon(&midi_device, channel_drums, 36, 90);//bass drum
+                    //midi_send_noteon(&midi_device, channel, note+12, 124);
+                  dprintf("midi noteon channel:%d note:%d velocity:%d\n", channel, note, velocity);
+                }
+                tone_status2[1][tone] += 1; //increase number of times note is played
               }
             } else {
-                uint8_t note = tone_status2[tone];
-                midi_send_noteoff(&midi_device, channel, note, velocity);
-                                sent_note_traffic = true;
-                if (drums)
-                  midi_send_noteoff(&midi_device, channel_drums, 36, 90);//bass drum
-                                if (drums)
-                                    sent_note_traffic = true;
-				//midi_send_noteoff(&midi_device, channel, note+12, 124);
-                dprintf("midi noteoff channel:%d note:%d velocity:%d\n", channel, note, velocity);
+                if (tone_status2[1][tone] > 0) {
+                  tone_status2[1][tone] -= 1;
+                  if (tone_status2[1][tone] == 0) {//disable the note only if its been played only once, else don't disable it
+                    uint8_t note = tone_status2[0][tone];
+                    midi_send_noteoff(&midi_device, channel, note, velocity);
+                    sent_note_traffic = true;
+                    //midi_send_noteoff(&midi_device, channel, note+12, 124);
+                    dprintf("midi noteoff channel:%d note:%d velocity:%d\n", channel, note, velocity);
+                  }
+                }
             }
-                        if (sent_note_traffic) {
-                                trikl_send_event_cc_after_note(record);
-                        }
-            return false;
+            break;
         }
 //XAM MIDI3//MAJORCHORD
         case MIDI3_TONE_MIN ... MIDI3_TONE_MAX: {
+            sent_note_traffic = true;
             uint8_t velocity = midi_config.velocity;
             uint8_t channel  = midi3_config.channel + midi_alt*10;
             uint8_t tone     = keycode - MIDI3_TONE_MIN;
@@ -229,7 +255,6 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
             uint8_t channel6  = midi6_config.channel + midi_alt*10;
             //uint8_t channel7  = midi7_config.channel + midi_alt*10;
             uint8_t channel_drums  = midi10_config.channel;
-                        bool sent_note_traffic = false;
             if (record->event.pressed) {
               if (bass_mute == 0) {
                 uint8_t note = midi3_compute_note(keycode);
@@ -237,35 +262,27 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 midi_send_noteon(&midi_device, channel, note, velocity);
                 midi_send_noteon(&midi_device, channel5, note+3, velocity);//fifth
                 midi_send_noteon(&midi_device, channel6, note-4, velocity);//root
-                                sent_note_traffic = true;
                 //midi_send_noteon(&midi_device, channel7, note+6, velocity);//dominant seventh
                 //if (drum_status_kick[1] == 0) {//enable the kick only if it hasnt already been played
               }
-                if (drums)
-                  midi_send_noteon(&midi_device, channel_drums, 38, 90);//snare drum
-                                if (drums)
-                                    sent_note_traffic = true;
-                dprintf("midi noteon channel:%d note:%d velocity:%d\n", channel, note, velocity);
+              if (drums && !trikl_bellow_swap_suppress_cc) 
+                midi_send_noteon(&midi_device, channel_drums, 38, 90);//snare drum
+              dprintf("midi noteon channel:%d note:%d velocity:%d\n", channel, note, velocity);
+              
             } else { //button depressed
               uint8_t note = tone_status3[tone];
               midi_send_noteoff(&midi_device, channel, note, velocity);
               midi_send_noteoff(&midi_device, channel5, note+3, velocity);//fifth
               midi_send_noteoff(&midi_device, channel6, note-4, velocity);//root
-                            sent_note_traffic = true;
               //midi_send_noteoff(&midi_device, channel7, note+6, velocity);//dominant seventh
-              if (drums)
-                midi_send_noteoff(&midi_device, channel_drums, 38, 90);//snare drum
-                            if (drums)
-                                sent_note_traffic = true;
+
               dprintf("midi noteoff channel:%d note:%d velocity:%d\n", channel, note, velocity);
             }
-                        if (sent_note_traffic) {
-                                trikl_send_event_cc_after_note(record);
-                        }
-            return false;
+            break;
         }
 //XAM MIDI4//MINORCHORD
         case MIDI4_TONE_MIN ... MIDI4_TONE_MAX: {
+            sent_note_traffic = true;
             uint8_t velocity = midi_config.velocity;
             uint8_t channel  = midi4_config.channel + midi_alt*10;
             uint8_t tone     = keycode - MIDI4_TONE_MIN;
@@ -273,43 +290,32 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
             uint8_t channel6  = midi6_config.channel + midi_alt*10;
             //uint8_t channel7  = midi7_config.channel + midi_alt*10;
             uint8_t channel_drums  = midi10_config.channel;
-                        bool sent_note_traffic = false;
             if (record->event.pressed) {
-              
               if (bass_mute == 0) {
               uint8_t note = midi4_compute_note(keycode);
               tone_status4[tone] = note;
               midi_send_noteon(&midi_device, channel, note, velocity);
               midi_send_noteon(&midi_device, channel5, note+4, velocity);//fifth
               midi_send_noteon(&midi_device, channel6, note-3, velocity);//root
-                            sent_note_traffic = true;
               //midi_send_noteon(&midi_device, channel7, note+7, velocity);//dominant seventh
               }
-              if (drums)
+              if (drums && !trikl_bellow_swap_suppress_cc) 
                 midi_send_noteon(&midi_device, channel_drums, 38, 90);//snare drum
-                            if (drums)
-                                sent_note_traffic = true;
               dprintf("midi noteon channel:%d note:%d velocity:%d\n", channel, note, velocity);
+              
             } else {
               uint8_t note = tone_status4[tone];
               midi_send_noteoff(&midi_device, channel, note, velocity);
               midi_send_noteoff(&midi_device, channel5, note+4, velocity);
               midi_send_noteoff(&midi_device, channel6, note-3, velocity);//root
-                            sent_note_traffic = true;
               //midi_send_noteoff(&midi_device, channel7, note+7, velocity);//dominant seventh
-              if (drums)
-                midi_send_noteoff(&midi_device, channel_drums, 38, 90);//snare drum
-                            if (drums)
-                                sent_note_traffic = true;
               dprintf("midi noteoff channel:%d note:%d velocity:%d\n", channel, note, velocity);
             }
-                        if (sent_note_traffic) {
-                                trikl_send_event_cc_after_note(record);
-                        }
-            return false;
+            break;
         }
 //XAM MIDI6//MIN&MAJ CHORD
         case MIDI6_TONE_MIN ... MIDI6_TONE_MAX: {
+            sent_note_traffic = true;
             uint8_t velocity = midi_config.velocity;
             uint8_t channelMaj = midi3_config.channel + midi_alt*10;
             uint8_t channelmin = midi4_config.channel + midi_alt*10;
@@ -317,7 +323,6 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
             uint8_t channel5  = midi5_config.channel + midi_alt*10;
             uint8_t channel6  = midi6_config.channel + midi_alt*10;
             uint8_t channel_drums  = midi10_config.channel;
-                        bool sent_note_traffic = false;
             if (record->event.pressed) {
               
               if (bass_mute == 0) {
@@ -327,13 +332,10 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
               midi_send_noteon(&midi_device, channelmin, note-1, velocity);//minor
               midi_send_noteon(&midi_device, channel5, note+3, velocity);//fifth
               midi_send_noteon(&midi_device, channel6, note-4, velocity);//root
-                            sent_note_traffic = true;
               //midi_send_noteon(&midi_device, channel7, note+7, velocity);//dominant seventh
               }
-              if (drums)
+              if (drums && !trikl_bellow_swap_suppress_cc)
                 midi_send_noteon(&midi_device, channel_drums, 38, 90);//snare drum
-                            if (drums)
-                                sent_note_traffic = true;
               dprintf("midi noteon channel:%d note:%d velocity:%d\n", channel, note, velocity);
             } else {
               uint8_t note = tone_status6[tone];
@@ -341,28 +343,20 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
               midi_send_noteoff(&midi_device, channelmin, note-1, velocity);//minor
               midi_send_noteoff(&midi_device, channel5, note+3, velocity);//fifth
               midi_send_noteoff(&midi_device, channel6, note-4, velocity);//root
-                            sent_note_traffic = true;
               //midi_send_noteoff(&midi_device, channel7, note+7, velocity);//dominant seventh
-              if (drums)
-                midi_send_noteoff(&midi_device, channel_drums, 38, 90);//snare drum
-                            if (drums)
-                                sent_note_traffic = true;
               dprintf("midi noteoff channel:%d note:%d velocity:%d\n", channel, note, velocity);
             }
-                        if (sent_note_traffic) {
-                                trikl_send_event_cc_after_note(record);
-                        }
-            return false;
+            break;
         }
 //XAM MIDI5//7thCHORD
         case MIDI5_TONE_MIN ... MIDI5_TONE_MAX: {
+            sent_note_traffic = true;
             uint8_t velocity = midi_config.velocity;
             uint8_t channel  = midi3_config.channel + midi_alt*10;
             uint8_t tone     = keycode - MIDI5_TONE_MIN;
             uint8_t channel7  = midi7_config.channel + midi_alt*10;
             uint8_t channel6  = midi6_config.channel + midi_alt*10;
             uint8_t channel_drums  = midi10_config.channel;
-                        bool sent_note_traffic = false;
             if (record->event.pressed) {
               
               if (bass_mute == 0) {
@@ -371,29 +365,18 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
               midi_send_noteon(&midi_device, channel, note, velocity);
               midi_send_noteon(&midi_device, channel7, note+7, velocity);//seventh
               midi_send_noteon(&midi_device, channel6, note-4, velocity);//root
-                            sent_note_traffic = true;
               }
-              if (drums)
+              if (drums && !trikl_bellow_swap_suppress_cc)
                 midi_send_noteon(&midi_device, channel_drums, 38, 90);//snare drum
-                            if (drums)
-                                sent_note_traffic = true;
               dprintf("midi noteon channel:%d note:%d velocity:%d\n", channel, note, velocity);
             } else {
               uint8_t note = tone_status4[tone];
               midi_send_noteoff(&midi_device, channel, note, velocity);
               midi_send_noteoff(&midi_device, channel7, note+7, velocity);
               midi_send_noteoff(&midi_device, channel6, note-4, velocity);//root
-                            sent_note_traffic = true;
-              if (drums)
-                midi_send_noteoff(&midi_device, channel_drums, 38, 90);//snare drum
-                            if (drums)
-                                sent_note_traffic = true;
               dprintf("midi noteoff channel:%d note:%d velocity:%d\n", channel, note, velocity);
             }
-                        if (sent_note_traffic) {
-                                trikl_send_event_cc_after_note(record);
-                        }
-            return false;
+            break;
         }
 //XAM MIDI repeated notes
         /*case MIDIr_TONE_MIN ... MIDIr_TONE_MAX: {
@@ -430,7 +413,7 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                     tone_statusreg[0][tone] = MIDI_INVALID_NOTE;
 				}
             }
-            return false;
+            break;
         }*/
 //
         case MIDI_OCTAVE_MIN ... MIDI_OCTAVE_MAX:
@@ -439,21 +422,21 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 midi_send_cc(&midi_device, midi_config.channel, 0x7B, 0);//alloff
                 dprintf("midi octave %d\n", midi_config.octave);
             }
-            return false;
+            break;
         case MI_OCTD:
             if (record->event.pressed && midi_config.octave > 0) {//TODO XAM erabaki nola in oktaba jetxi ahal izateko, minimon dao ta. Igual 0 ez iztea minimoa, signed izatea ta minimoa -2 adibidez. Ordun compute ntoe re signed.
                 midi_config.octave--;
                 midi_send_cc(&midi_device, midi_config.channel, 0x7B, 0);//alloff
                 dprintf("midi octave %d\n", midi_config.octave);
             }
-            return false;
+            break;
         case MI_OCTU:
             if (record->event.pressed && midi_config.octave < (MIDI_OCTAVE_MAX - MIDI_OCTAVE_MIN)) {
                 midi_config.octave++;
                 midi_send_cc(&midi_device, midi_config.channel, 0x7B, 0);//alloff
                 dprintf("midi octave %d\n", midi_config.octave);
             }
-            return false;
+            break;
 			//XAM
         case MI2_OCTD:
             if (record->event.pressed && midi2_config.octave > 0) {//TODO XAM erabaki nola in oktaba jetxi ahal izateko, minimon dao ta. Igual 0 ez iztea minimoa, signed izatea ta minimoa -2 adibidez. Ordun compute ntoe re signed.
@@ -461,14 +444,14 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 midi_send_cc(&midi_device, midi_config.channel, 0x7B, 0);//alloff
                 dprintf("midi octave %d\n", midi2_config.octave);
             }
-            return false;
+            break;
         case MI2_OCTU:
             if (record->event.pressed && midi2_config.octave < (MIDI_OCTAVE_MAX - MIDI_OCTAVE_MIN)) {
                 midi2_config.octave++;
                 midi_send_cc(&midi_device, midi_config.channel, 0x7B, 0);//alloff
                 dprintf("midi octave %d\n", midi2_config.octave);
             }
-            return false;
+            break;
         case MIDI_TRANSPOSE_MIN ... MIDI_TRANSPOSE_MAX:
             if (record->event.pressed) {
                 midi_config.transpose = keycode - MI_TRNS_0;
@@ -476,7 +459,7 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 midi_send_cc(&midi_device, midi_config.channel, 80, midi_config.transpose);
                 dprintf("midi transpose %d\n", midi_config.transpose);
             }
-            return false;
+            break;
         /* case MI_TRNS_7:
             if (record->event.pressed) {
                 midi_config.transpose = 7;
@@ -492,7 +475,7 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 midi_send_cc(&midi_device, midi_config.channel, 80, midi_config.transpose);
                 dprintf("midi transpose %d\n", midi_config.transpose);
             }
-            return false;
+            break;
         case MI_TRNSU:
             if (record->event.pressed && midi_config.transpose < (MIDI_TRANSPOSE_MAX+7 - MI_TRNS_0)) {//XAM
                 // const bool positive = midi_config.transpose > 0;
@@ -502,13 +485,13 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 // if (positive && midi_config.transpose < 0) midi_config.transpose--;
                 dprintf("midi transpose %d\n", midi_config.transpose);
             }
-            return false;
+            break;
         case MIDI_VELOCITY_MIN ... MIDI_VELOCITY_MAX:
             if (record->event.pressed) {
                 midi_config.velocity = compute_velocity(keycode - MIDI_VELOCITY_MIN);
                 dprintf("midi velocity %d\n", midi_config.velocity);
             }
-            return false;
+            break;
         case MI_VELD:
             if (record->event.pressed && midi_config.velocity > 0) {
                 if (midi_config.velocity == 127) {
@@ -521,7 +504,7 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
 
                 dprintf("midi velocity %d\n", midi_config.velocity);
             }
-            return false;
+            break;
         case MI_VELU:
             if (record->event.pressed && midi_config.velocity < 127) {
                 if (midi_config.velocity < 115) {
@@ -531,67 +514,67 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 }
                 dprintf("midi velocity %d\n", midi_config.velocity);
             }
-            return false;
+            break;
         case MIDI_CHANNEL_MIN ... MIDI_CHANNEL_MAX:
             if (record->event.pressed) {
                 midi_config.channel = keycode - MIDI_CHANNEL_MIN;
                 dprintf("midi channel %d\n", midi_config.channel);
             }
-            return false;
+            break;
         case MI_CHD:
             if (record->event.pressed) {
                 midi_config.channel--;
                 dprintf("midi channel %d\n", midi_config.channel);
             }
-            return false;
+            break;
         case MI_CHU:
             if (record->event.pressed) {
                 midi_config.channel++;
                 dprintf("midi channel %d\n", midi_config.channel);
             }
-            return false;
+            break;
 			//xam
         case MI2_CHD:
             if (record->event.pressed) {
                 midi2_config.channel--;
                 dprintf("midi channel %d\n", midi_config.channel);
             }
-            return false;
+            break;
         case MI2_CHU:
             if (record->event.pressed) {
                 midi2_config.channel++;
                 dprintf("midi channel %d\n", midi_config.channel);
             }
-            return false;
+            break;
         case MI_ALLOFF:
             if (record->event.pressed) {
                 midi_send_cc(&midi_device, midi_config.channel, 0x7B, 0);
                 dprintf("midi all notes off\n");
             }
-            return false;
+            break;
         case MI_SUS:
             midi_send_cc(&midi_device, midi_config.channel, 0x40, record->event.pressed ? 127 : 0);
             dprintf("midi sustain %d\n", record->event.pressed);
-            return false;
+            break;
         case MI_PORT:
             midi_send_cc(&midi_device, midi_config.channel, 0x41, record->event.pressed ? 127 : 0);
             dprintf("midi portamento %d\n", record->event.pressed);
-            return false;
+            break;
         case MI_SOST:
             midi_send_cc(&midi_device, midi_config.channel, 0x42, record->event.pressed ? 127 : 0);
             dprintf("midi sostenuto %d\n", record->event.pressed);
-            return false;
+            break;
         case MI_SOFT:
             midi_send_cc(&midi_device, midi_config.channel, 0x43, record->event.pressed ? 127 : 0);
             dprintf("midi soft %d\n", record->event.pressed);
-            return false;
+            break;
         case MI_LEG:
             midi_send_cc(&midi_device, midi_config.channel, 0x43, record->event.pressed ? 127 : 0);
             dprintf("midi legato %d\n", record->event.pressed);
-            return false;
+            break;
         case MI_MOD:
             midi_modulation_step = record->event.pressed ? 1 : -1;
-            return false;
+            break;
         case MI_MODSD:
             if (record->event.pressed) {
                 midi_config.modulation_interval++;
@@ -599,13 +582,13 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 if (midi_config.modulation_interval == 0) midi_config.modulation_interval--;
                 dprintf("midi modulation interval %d\n", midi_config.modulation_interval);
             }
-            return false;
+            break;
         case MI_MODSU:
             if (record->event.pressed && midi_config.modulation_interval > 0) {
                 midi_config.modulation_interval--;
                 dprintf("midi modulation interval %d\n", midi_config.modulation_interval);
             }
-            return false;
+            break;
         case MI_BENDD:/* 
             if (record->event.pressed) {
                 midi_send_pitchbend(&midi_device, midi_config.channel, -0x2000);
@@ -614,37 +597,37 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 midi_send_pitchbend(&midi_device, midi_config.channel, 0);
                 dprintf("midi pitchbend channel:%d amount:%d\n", midi_config.channel, 0);
             }
-            return false; */
+            break; */
             if (record->event.pressed) {
               keep_bending_down = 1;
             } else {
               keep_bending_down = 0;
             }
-            return false;
+            break;
         case MI_BENDU:
             if (record->event.pressed) {
               keep_bending_up = 1;
             } else {
               keep_bending_up = 0;
             }
-            return false;
+            break;
         //Registroa
 		case TRIKL_REG_TGL:
             if (record->event.pressed) {
 				if (registroa == 0) set_registroa(1);
 				else set_registroa(0);
 			}
-			return false;
+            break;
 		case TRIKL_REG_ON:
             if (record->event.pressed) {
 				set_registroa(1);
 			}
-			return false;
+            break;
 		case TRIKL_REG_OFF:
             if (record->event.pressed) {
 				set_registroa(0);
 			}
-			return false;
+            break;
 			
 			//DRUMS
 		case TRIKL_DRUM_TGL:
@@ -657,19 +640,19 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
 					midi_send_noteoff(&midi_device, midi10_config.channel, 38, 90);//snare drum
 				}
 			}
-			return false;
+            break;
 		case TRIKL_DRUM_ON:
             if (record->event.pressed) {
 				drums = 1;
 			}
-			return false;
+            break;
 		case TRIKL_DRUM_OFF:
             if (record->event.pressed) {
 				drums = 0;
 				midi_send_noteoff(&midi_device, midi10_config.channel, 36, 90);//bass drum				
 				midi_send_noteoff(&midi_device, midi10_config.channel, 38, 90);//snare drum
 			}
-			return false;
+            break;
       
     //MIDI_ALT
 		case TRIKL_ALT_TGL:
@@ -679,38 +662,59 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
 				  else 
             midi_alt = 0; 
             }
-			return false;
+            break;
+    //EVENT CC TRAFFIC TOGGLE
+		case TRIKL_EVENT_CC_TGL:
+            if (record->event.pressed) {
+                trikl_event_cc_toggle();
+            }
+            break;
+		case TRIKL_EVENT_CC_ON:
+            if (record->event.pressed) {
+                set_trikl_event_cc(true);
+            }
+            break;
+		case TRIKL_EVENT_CC_OFF:
+            if (record->event.pressed) {
+                set_trikl_event_cc(false);
+            }
+            break;
     //PROGRAM CHANGES
 		case PC_UP_1:
             if (record->event.pressed) {
                 current_program = (current_program + 1) % 128; // wrap around at 128
                 midi_send_programchange(&midi_device, midi_config.channel, current_program);
             }
-            return false;    
+            break;  
         case PC_UP_10:
             if (record->event.pressed) {
                 current_program = (current_program + 10) % 128; // wrap around at 128
                 midi_send_programchange(&midi_device, midi_config.channel, current_program);
             }    
-            return false;
+            break;
         case PC_DN_1:
             if (record->event.pressed) {
                 current_program = (current_program == 0) ? 127 : current_program - 1; //wrap around at 0
                 midi_send_programchange(&midi_device, midi_config.channel, current_program);
             }    
-            return false;
+            break;
         case PC_DN_10:
             if (record->event.pressed) {
                 current_program = (current_program < 10) ? (128 + current_program - 10) : (current_program - 10); //wrap around at 0
                 midi_send_programchange(&midi_device, midi_config.channel, current_program);
             }    
-            return false;
+            break;
 // void midi_send_cc           (MidiDevice* device, uint8_t chan, uint8_t num, uint8_t val) {
 // void midi_send_programchange(MidiDevice* device, uint8_t chan, uint8_t num) { device->send_func(device, 2, MIDI_PROGCHANGE | (chan & MIDI_CHANMASK), num & 0x7F, 0); }
 			
+        default:
+            return true; // Not a MIDI keycode: let QMK continue processing
     };
+    if (sent_note_traffic) {
+            trikl_send_event_cc_after_note(record);
+        }
 
-    return true;
+    return false;
 }
 
 #    endif  // MIDI_ADVANCED

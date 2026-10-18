@@ -30,6 +30,7 @@
 #include <string.h>
 #include "print.h"
 #include "process_midi.h"
+#include "config.h"
 
 #include "usb_main.h"
 
@@ -1132,6 +1133,20 @@ void send_midi_packet(MIDI_EventPacket_t *event) { chnWrite(&drivers.midi_driver
 
 // Registered as midi_device.input_catchall_callback — called once per complete decoded MIDI message.
 // byte0 = full MIDI status (command | channel), byte1 = note/CC number, byte2 = velocity/value.
+#ifdef RGB_MATRIX_ENABLE
+extern led_config_t g_led_config;
+#endif
+
+// Translate a physical (row, col) coordinate to a mapped LED index
+static uint8_t trikl_get_led_from_coord(uint8_t row, uint8_t col) {
+#ifdef RGB_MATRIX_ENABLE
+    if (row < MATRIX_ROWS && col < MATRIX_COLS) {
+        return g_led_config.matrix_co[row][col];
+    }
+#endif
+    return 255;
+}
+
 void trikl_midi_catchall_cb(MidiDevice *device, uint16_t cnt, uint8_t byte0, uint8_t byte1, uint8_t byte2) {
     (void)device;
     (void)cnt;
@@ -1165,22 +1180,43 @@ void trikl_midi_catchall_cb(MidiDevice *device, uint16_t cnt, uint8_t byte0, uin
             LED_OVERRIDES[led_idx] = 0;
         }
     }
-    // CC (0xB0) number 123 — used as clear-all LEDs signal
-    else if (command == 0xB0 && cc_or_note == 123) {
-        for (int i = 0; i < DRIVER_LED_TOTAL; i++) {
-            LED_OVERRIDES[i] = 0;
+    // CC (0xB0)
+    else if (command == 0xB0) {
+        if (cc_or_note == 123) {
+            // clear-all LEDs signal
+            for (int i = 0; i < DRIVER_LED_TOTAL; i++) {
+                LED_OVERRIDES[i] = 0;
+            }
         }
+#if defined(TRIKL_BELLOW_CC_NUM) && defined(TRIKL_BELLOW_CC_CH)
+        // Custom symmetric Bellow state CC
+        else if (cc_or_note == TRIKL_BELLOW_CC_NUM && channel == TRIKL_BELLOW_CC_CH) {
+            LED_BELLOWS = (value >= 64) ? 1 : 0;
+        }
+#endif
+#if defined(TRIKL_EVENT_CC_NUM) && defined(TRIKL_EVENT_CC_BASE_CH)
+        // Custom symmetric Event CC (row*16 + col -> LED state)
+        else if (cc_or_note == TRIKL_EVENT_CC_NUM && channel >= TRIKL_EVENT_CC_BASE_CH && channel <= TRIKL_EVENT_CC_BASE_CH + 3) {
+            uint8_t row = value / 16;
+            uint8_t col = value % 16;
+            uint8_t led_idx = trikl_get_led_from_coord(row, col);
+            if (led_idx < DRIVER_LED_TOTAL) {
+                // Determine states from channel offset (0-3)
+                uint8_t ch_offset = channel - TRIKL_EVENT_CC_BASE_CH;
+                uint8_t is_pressed = (ch_offset % 2 != 0);
+                uint8_t is_pushing = (ch_offset >= 2);
+                
+                LED_BELLOWS = is_pushing ? 1 : 0;
+                LED_OVERRIDES[led_idx] = is_pressed ? 1 : 0;
+            }
+        }
+#endif
     }
-    // CC (0xB0) 14-15 — used as below pull/push
-    else if (command == 0xB0 && channel == 14) {
-        LED_BELLOWS = 0; //pulling
-    }
-    else if (command == 0xB0 && channel == 15) {
-        LED_BELLOWS = 1; //pushing
-    }
+    // Note On (0x90)
     else if (command == 0x90) {
         uint8_t led_idx = cc_or_note;
         if (led_idx < DRIVER_LED_TOTAL) {
+            // Implicit bellow change via Note On channels
             if (channel == 0 || channel == 2) {
                 LED_BELLOWS = 0; //pulling
             } else if (channel == 1 || channel == 3) {
