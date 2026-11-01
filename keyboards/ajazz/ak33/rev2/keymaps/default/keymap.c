@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "color.h"
 #include "quantum.h" //for reset eeprom
+#include "usb_device_state.h"
 
 
 
@@ -35,7 +36,7 @@ bool is_key_led(uint8_t i) {
     led = ((i<=13) || (i>=17 && i<=27) || (i>=49 && i<=54) || (i>=62 && i<=67));// || (i==76));
 #elif defined(TRIKL_IX11_T)
     // led = ((i<=12) || (i>=16 && i<=27) || (i>=31 && i<=42) || (i>=49 && i<=54) || (i>=62 && i<=67) || (i==76));
-    led = ((i>=1 && i<=13) || (i>=17 && i<=27) || (i>=32 && i<=41) || (i>=47 && i<=56) || (i>=60 && i<=69));// || (i==76));
+    led = ((i>=1 && i<=13) || (i>=16 && i<=27) || (i>=31 && i<=41) || (i>=47 && i<=56) || (i>=60 && i<=69));// || (i==76));
 #elif defined(TRIKL_IX11CR_T)
     led = ((i<=12) || (i>=16 && i<=27) || (i>=31 && i<=42) || (i>=46 && i<=56) || (i>=59 && i<=69));// || (i==76));
 #elif defined(TRIKL_IXLR_T)
@@ -343,12 +344,12 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = { //TODO: XAM: repe
 //                {   _______,    _______,      _______,     _______,     MI2_C_1,    MI3_E_1, MI2_G_1,    MI3_B_1,    MI2_A_0,    MI4_C_2,   _______,     _______,    _______,    _______,      _______,      TRIKL_DRUM_TGL},//MI2_OCTD  },
 //                {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_REG_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
 //              },//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-/*MEX34*/     [_R1] = { {   FUNC, _______,  MI_C_5, MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,    MI_Ds_3,  _______ ,    _______,         MI_TRNSU},//MI_OCTU},//MI_OCTD},//KC_DEL  },
-                 {   _______,           MI_F_5,   MI_D_5,    MI_B_4,   MI_A_4,    MI_F_4,     MI_D_4,   MI_B_3,    MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,  MI_Gs_3,  _______, _______,      MI_OCTU},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
-                 {   _______,                MI_G_5, MI_E_5,  MI_D_5,   MI_As_4,     MI_G_4,   MI_E_4,   MI_D_4,     MI_As_3,    MI_G_3,    MI_E_3,    MI_Cs_4,    _______, _______, _______, MI2_OCTU},//
-                 {   _______,    _______,       _______,       _______,    _______,   _______, _______,    _______,   _______,    _______,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_3},//MI_TRNSU},//KC_PGDN },
-                 {   _______,    _______,      _______,     _______,      _______,    _______, _______,    _______,    _______,    _______,   _______,     _______,    _______,    _______,      _______,      MI_TRNS_0},//MI2_OCTD  },
-                 {   _______, _______,      _______,  _______,   _______,    _______, MOB,    _______,    _______,     _______,   MOB,    _______,    _______,     _______,    _______,      TRIKL_REG_TGL},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
+/*MEX34*/     [_R1] = { {   FUNC, _______,  MI_C_5, MI_A_4,   MI_Fs_4,   MI_E_4,    MI_C_4,    MI_A_3,    MI_Fs_3,    MI_E_3,     MI_C_3,     MI_A_2,    MI_Ds_3,  _______ ,    _______,         TONE_NEXT},//MI_OCTU},//MI_OCTD},//KC_DEL  },
+                 {   _______,           MI_F_5,   MI_D_5,    MI_B_4,   MI_A_4,    MI_F_4,     MI_D_4,   MI_B_3,    MI_A_3,     MI_F_3,     MI_D_3,     MI_B_2,  MI_Gs_3,  _______, _______,      PC_1},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
+                 {   _______,                MI_G_5, MI_E_5,  MI_D_5,   MI_As_4,     MI_G_4,   MI_E_4,   MI_D_4,     MI_As_3,    MI_G_3,    MI_E_3,    MI_Cs_4,    _______, _______, _______, PC_2},//
+                 {   _______,    _______,       _______,       _______,    _______,   _______, _______,    _______,   _______,    _______,    _______,    _______,    _______,      _______,     _______,      PC_3},//MI_TRNSU},//KC_PGDN },
+                 {   _______,    _______,      _______,     _______,      _______,    _______, _______,    _______,    _______,    _______,   _______,     _______,    _______,    _______,      _______,      PC_4},//MI2_OCTD  },
+                 {   _______, _______,      _______,  _______,   _______,    _______, MOB,    _______,    _______,     _______,   MOB,    _______,    _______,     _______,    _______,      PC_5},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
                },
            [_L1] = { {   _______, _______,   _______,   _______,   _______,    _______,    _______,    _______,    _______,     _______,     _______,    _______, _______, _______ ,    _______,         _______},//MI_OCTU},//MI_OCTD},//KC_DEL  },
                  {   _______,             _______,    _______,   _______,    _______,     _______,   _______,    _______,     _______,     _______,     _______,  _______, _______,    _______, _______,      _______},//MI_OCTU},//TRIKL_ALT},TGLMI2_OCTU},//MI_OCTU},//KC_HOME },
@@ -358,11 +359,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = { //TODO: XAM: repe
                  {   _______, _______,      _______,  _______,   _______,    _______, _______,    _______,    _______,     _______,   _______,    _______,    _______,     _______,    _______,      _______},//TRIKL_ALT_TGL},//MI_TRNS_N2},//MI2_OCTU }
                },
 
-     [_RB1]= { {   _______,     _______,   MI_G_5, MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_Cs_3,     _______, _______,    MI_TRNSD},//MI_OCTD  },
-                 {   _______,        MI_C_6, MI_G_5,   MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_Fs_3,  _______,    _______,    MI_OCTD},//MI2_OCTD},//MI_OCTU  },
-                 {   _______,               MI_C_6, MI_A_5,  MI_F_5,   MI_C_5,   MI_A_4,   MI_F_4,   MI_C_4,    MI_A_3,    MI_F_3,    MI_C_3,  MI_Eb_4,    _______, _______, _______, MI2_OCTD},//MI_TRNSD},//MI_TRNSD },
-                 {   _______,    _______,       _______,    _______,    _______,    _______, _______,    _______,   _______,    _______,    _______,    _______,    _______,      _______,     _______,      MI_TRNS_5},//MI_TRNSU},//KC_PGDN },
-                 {   _______,    _______,      _______,     _______,    _______,     _______, _______,    _______,    _______,    _______,   _______,     _______,    _______,    _______,      _______,      TRIKL_ALT_TGL},//MI2_OCTD  },
+     [_RB1]= { {   _______,     _______,   MI_G_5, MI_D_5,    MI_B_4,  MI_G_4,     MI_D_4,  MI_B_3,     MI_G_3,    MI_D_3,     MI_B_2,     MI_G_2,     MI_Cs_3,     _______, _______,    MI_TRNSU},//MI_OCTD  },
+                 {   _______,        MI_C_6, MI_G_5,   MI_E_5,    MI_C_5,  MI_G_4,     MI_E_4,  MI_C_4,     MI_G_3,    MI_E_3,     MI_C_3,     MI_G_2,     MI_Fs_3,  _______,    _______,    MI_TRNSD},//MI2_OCTD},//MI_OCTU  },
+                 {   _______,               MI_C_6, MI_A_5,  MI_F_5,   MI_C_5,   MI_A_4,   MI_F_4,   MI_C_4,    MI_A_3,    MI_F_3,    MI_C_3,  MI_Eb_4,    _______, _______, _______, MI_GAIN_UP},//MI_TRNSD},//MI_TRNSD },
+                 {   _______,    _______,       _______,    _______,    _______,    _______, _______,    _______,   _______,    _______,    _______,    _______,    _______,      _______,     _______,      MI_GAIN_DOWN},//MI_TRNSU},//KC_PGDN },
+                 {   _______,    _______,      _______,     _______,    _______,     _______, _______,    _______,    _______,    _______,   _______,     _______,    _______,    _______,      _______,      PC_UP_5},//MI2_OCTD  },
                  {   _______,     _______,      _______,     _______, _______,    _______, _______,   _______,    _______,    _______,    _______,    _______,    _______,    _______,    _______,    TRIKL_DRUM_TGL},//PANIKO},//TRIKL_DRUM_TGL},//TRIKL_DRUM_TGL},//TO(_MIDIALT)},//MI2_OCTU }
               },
      [_LB1]= { {   _______,     _______,   _______,    _______,  _______,     _______,  _______,     _______,    _______,     _______,     _______,     _______,  _______,   _______, _______,    _______},//MI_OCTD  },
@@ -768,6 +769,42 @@ static uint8_t  bellow_swap_phase = 0;
 static uint16_t bellow_swap_timer = 0;
 #endif // MIDI_ENABLE && MIDI_ADVANCED
 
+#ifndef TONALITIES
+#define TONALITIES { -2, -3 }
+#endif
+
+static const int8_t tonalities[] = TONALITIES;
+#define NUM_TONALITIES (sizeof(tonalities) / sizeof(tonalities[0]))
+
+void next_tonality(void) {
+    if (NUM_TONALITIES == 0) return;
+
+    uint8_t next_idx = 0;
+    bool found = false;
+    for (uint8_t i = 0; i < NUM_TONALITIES; i++) {
+        if (tonalities[i] == midi_config.transpose) {
+            next_idx = (i + 1) % NUM_TONALITIES;
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        next_idx = 0;
+    }
+
+    midi_config.transpose = tonalities[next_idx];
+
+    // Silence active notes on previous tonality (preserve configuration buttons on last column)
+    for (uint8_t i = 0; i < 5; i++) {
+        raw_matrix[i] &= (MATRIX_ROW_SHIFTER << (MATRIX_COLS - 1));
+    }
+
+#if defined(MIDI_ENABLE) && defined(MIDI_ADVANCED)
+    midi_send_cc(&midi_device, midi_config.channel, 0x7B, 0); // all notes off
+    midi_send_cc(&midi_device, midi_config.channel, 80, midi_config.transpose);
+#endif
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
 	  //TODO, when going to MIDIALT make sure to set off BELOW??
@@ -789,9 +826,14 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 		  }	       
       //return true;  
      }
-    return true; 
-     
-  
+    return true;
+
+    case TONE_NEXT:
+        if (record->event.pressed) {
+            next_tonality();
+        }
+        return false;
+
     case BASS_MUTE: 
         if (record->event.pressed) {
           if (bass_mute == 1) {
@@ -1119,11 +1161,25 @@ void keyboard_post_init_user(void) {
 #endif
 
 #if defined(TRIKL_RGB)
-	// Force custom solid mode on boot so reactive modes from EEPROM cannot mask MIDI overrides.
+	// Arrancamos con bajo consumo (TRIKL_NONE: solo el boton de transposicion encendido)
+	// para cumplir la norma USB (<100mA) y evitar picos de corriente durante la enumeracion.
 	rgb_matrix_enable_noeeprom();
-	rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_TRIKL_SOLID);
+	rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_TRIKL_NONE);
 #endif
   //debug_mouse=true;
+}
+
+void notify_usb_device_state_change_user(enum usb_device_state state) {
+#if defined(TRIKL_RGB)
+    if (state == USB_DEVICE_STATE_CONFIGURED) {
+        // Enumeracion USB completada con exito por el host (Linux/Windows)
+        // Ahora es seguro encender el modo completo de matriz RGB
+        rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_TRIKL_SOLID_FULL);
+    } else {
+        // En desconexion, reset o suspension, volver al modo de reposo/bajo consumo
+        rgb_matrix_mode_noeeprom(RGB_MATRIX_CUSTOM_TRIKL_NONE);
+    }
+#endif
 }
 
 void matrix_scan_user(void) {

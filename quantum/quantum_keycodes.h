@@ -1169,8 +1169,18 @@ enum quantum_keycodes {
     TRIKL_EVENT_CC_OFF,// Event CC traffic disable
     PC_UP_1,//Programm change increment 1
     PC_DN_1,//Programm change decrement 1
+    PC_UP_5,//Programm change increment 5
+    PC_DN_5,//Programm change decrement 5
     PC_UP_10,//Programm change increment 10
     PC_DN_10,//Programm change decrement 10
+    GAIN_UP,   // Gain increment (sends MIDI CC 20)
+    GAIN_DOWN, // Gain decrement (sends MIDI CC 21)
+    PC_1,      // Program Change 1 (sends Program 0, Fluidpatcher patch 1)
+    PC_2,      // Program Change 2 (sends Program 1, Fluidpatcher patch 2)
+    PC_3,      // Program Change 3 (sends Program 2, Fluidpatcher patch 3)
+    PC_4,      // Program Change 4 (sends Program 3, Fluidpatcher patch 4)
+    PC_5,      // Program Change 5 (sends Program 4, Fluidpatcher patch 5)
+    TONE_NEXT, // Advance to next tonality
 	SAFE_RANGE
 };
 
@@ -1179,6 +1189,40 @@ enum quantum_keycodes {
 #define TRIKL_EV_CC_ON  TRIKL_EVENT_CC_ON
 #define TRIKL_EV_CC_OFF TRIKL_EVENT_CC_OFF
 #define TRIKL_EVCC_TGL  TRIKL_EVENT_CC_TGL
+
+// Aliases for Gain CC keycodes
+#define GAIN_DN         GAIN_DOWN
+#define GAIN_INC        GAIN_UP
+#define GAIN_DEC        GAIN_DOWN
+#define MI_GAIN_UP      GAIN_UP
+#define MI_GAIN_DOWN    GAIN_DOWN
+#define MI_GAIN_DN      GAIN_DOWN
+#define TRIKL_GAIN_UP   GAIN_UP
+#define TRIKL_GAIN_DOWN GAIN_DOWN
+#define TRIKL_GAIN_DN   GAIN_DOWN
+
+// Aliases for Program Change keycodes
+#define MI_PC_1         PC_1
+#define MI_PC_2         PC_2
+#define MI_PC_3         PC_3
+#define MI_PC_4         PC_4
+#define MI_PC_5         PC_5
+#define TRIKL_PC_1      PC_1
+#define TRIKL_PC_2      PC_2
+#define TRIKL_PC_3      PC_3
+#define TRIKL_PC_4      PC_4
+#define TRIKL_PC_5      PC_5
+
+// Aliases for Next Tonality keycode
+#define NEXT_TONE       TONE_NEXT
+#define TRIKL_TONE_NEXT TONE_NEXT
+#define TRIKL_NEXT_TONE TONE_NEXT
+#define MI_TONE_NEXT    TONE_NEXT
+#define MI_NEXT_TONE    TONE_NEXT
+#define TRNS_NEXT       TONE_NEXT
+#define NEXT_TRNS       TONE_NEXT
+#define MI_TRNS_NEXT    TONE_NEXT
+#define MI_NEXT_TRNS    TONE_NEXT
 
 // Keycode modifiers & aliases
 #define LCTL(kc) (QK_LCTL | (kc))

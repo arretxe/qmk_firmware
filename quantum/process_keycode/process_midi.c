@@ -45,7 +45,8 @@ static uint8_t tone_status6[MIDI_TONE_COUNT]; // Maj and Min
 //static uint8_t drum_status_snare[2];
 static uint8_t tone_statusreg[2][MIDI_TONE_COUNT];
 
-static uint8_t  current_program = 0;
+static uint8_t  current_program = 5; //for MEX
+// static uint8_t  current_program = 0;
 static uint8_t  midi_modulation;
 static int8_t   midi_modulation_step;
 static uint16_t midi_modulation_timer;
@@ -88,6 +89,28 @@ void trikl_event_cc_toggle(void) {
 void set_trikl_event_cc(bool on_off) {
     trikl_event_cc_enabled = on_off;
 }
+
+void midi_gain_up(void) {
+    midi_send_cc(&midi_device, midi_config.channel, GAIN_UP_CC, 127);
+    dprintf("midi gain up CC %d\n", GAIN_UP_CC);
+}
+
+void midi_gain_down(void) {
+    midi_send_cc(&midi_device, midi_config.channel, GAIN_DOWN_CC, 127);
+    dprintf("midi gain down CC %d\n", GAIN_DOWN_CC);
+}
+
+void midi_set_program(uint8_t program) {
+    current_program = program % 128;
+    midi_send_programchange(&midi_device, midi_config.channel, current_program);
+    dprintf("midi program change %d\n", current_program);
+}
+
+void midi_program_1(void) { midi_set_program(0); }
+void midi_program_2(void) { midi_set_program(1); }
+void midi_program_3(void) { midi_set_program(2); }
+void midi_program_4(void) { midi_set_program(3); }
+void midi_program_5(void) { midi_set_program(4); }
 
 static inline void trikl_send_event_cc_after_note(const keyrecord_t *record) {
 #if defined(TRIKL_EVENT_CC_NUM) && defined(TRIKL_EVENT_CC_BASE_CH)
@@ -692,6 +715,12 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 midi_send_programchange(&midi_device, midi_config.channel, current_program);
             }    
             break;
+        case PC_UP_5:
+            if (record->event.pressed) {
+                current_program = (current_program + 5) % 10; // wrap around at 128
+                midi_send_programchange(&midi_device, midi_config.channel, current_program);
+            }    
+            break;
         case PC_DN_1:
             if (record->event.pressed) {
                 current_program = (current_program == 0) ? 127 : current_program - 1; //wrap around at 0
@@ -703,6 +732,48 @@ bool process_midi(uint16_t keycode, keyrecord_t *record) {
                 current_program = (current_program < 10) ? (128 + current_program - 10) : (current_program - 10); //wrap around at 0
                 midi_send_programchange(&midi_device, midi_config.channel, current_program);
             }    
+            break;
+        case PC_DN_5:
+            if (record->event.pressed) {
+                current_program = (current_program < 5) ? (10 + current_program - 5) : (current_program - 5); //wrap around at 0
+                midi_send_programchange(&midi_device, midi_config.channel, current_program);
+            }    
+            break;
+        case PC_1:
+            if (record->event.pressed) {
+                midi_program_1();
+            }
+            break;
+        case PC_2:
+            if (record->event.pressed) {
+                midi_program_2();
+            }
+            break;
+        case PC_3:
+            if (record->event.pressed) {
+                midi_program_3();
+            }
+            break;
+        case PC_4:
+            if (record->event.pressed) {
+                midi_program_4();
+            }
+            break;
+        case PC_5:
+            if (record->event.pressed) {
+                midi_program_5();
+            }
+            break;
+    //GAIN CONTROLS
+        case GAIN_UP:
+            if (record->event.pressed) {
+                midi_gain_up();
+            }
+            break;
+        case GAIN_DOWN:
+            if (record->event.pressed) {
+                midi_gain_down();
+            }
             break;
 // void midi_send_cc           (MidiDevice* device, uint8_t chan, uint8_t num, uint8_t val) {
 // void midi_send_programchange(MidiDevice* device, uint8_t chan, uint8_t num) { device->send_func(device, 2, MIDI_PROGCHANGE | (chan & MIDI_CHANMASK), num & 0x7F, 0); }

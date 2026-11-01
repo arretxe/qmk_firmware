@@ -54,6 +54,23 @@ extern bool trikl_event_cc_enabled;
 void trikl_event_cc_toggle(void);
 void set_trikl_event_cc(bool on_off);
 
+#ifndef GAIN_UP_CC
+#    define GAIN_UP_CC 20
+#endif
+#ifndef GAIN_DOWN_CC
+#    define GAIN_DOWN_CC 21
+#endif
+
+void midi_gain_up(void);
+void midi_gain_down(void);
+
+void midi_set_program(uint8_t program);
+void midi_program_1(void);
+void midi_program_2(void);
+void midi_program_3(void);
+void midi_program_4(void);
+void midi_program_5(void);
+
 #        define MIDI_INVALID_NOTE 0xFF
 #        define MIDI_TONE_COUNT (MIDI_TONE_MAX - MIDI_TONE_MIN + 1)
 

@@ -28,6 +28,8 @@
 #define DRUMS_POR 0 // power_on value for drums
 #define TRANSPOSE_POR -2 // power_on value for transpose (0=G/C) 3=Bb 5=C 7=D
 #define TRANS_BUT_NUM 14 //Transpose button LED number, to know which LED to assign color to
+#define TONALITIES { -2, -3 } // List of tonalities to cycle through with TONE_NEXT
+#define TONALITY_LIST TONALITIES
 
 /* Key-event CC protocol
  * Event CC (sent with every key event that generates MIDI notes):
@@ -101,6 +103,8 @@
 #define USB_POLLING_INTERVAL_MS 1 //1ms
 #define QMK_KEYS_PER_SCAN 32
 //#define STRICT_LAYER_RELEASE //proatzeko
+#define NO_SUSPEND_POWER_DOWN
+
 
 
 #define BOOTMAGIC_LITE_ROW 0
@@ -172,6 +176,7 @@
   //Custom effects:
   #define ENABLE_TRIKL_HEATMAP
   #define ENABLE_TRIKL_SOLID
+  #define ENABLE_TRIKL_SOLID_FULL
 #else
   #define RGB_MATRIX_STARTUP_MODE RGB_MATRIX_CUSTOM_TRIKL_NONE  // Sets the default mode, if none has been set  
   #define ENABLE_TRIKL_NONE // custom mode with all off

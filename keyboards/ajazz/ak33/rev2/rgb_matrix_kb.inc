@@ -1,10 +1,22 @@
   // Add your new core rgb matrix effect here, order determines enum order
  
 #if defined(TRIKL_RGB)
+  RGB_MATRIX_EFFECT(TRIKL_NONE)
   RGB_MATRIX_EFFECT(TRIKL_SOLID)
+  RGB_MATRIX_EFFECT(TRIKL_SOLID_FULL)
   #ifdef RGB_MATRIX_CUSTOM_EFFECT_IMPLS
 
   #include "process_midi.h"
+
+bool TRIKL_NONE(effect_params_t* params) {
+    RGB_MATRIX_USE_LIMITS(led_min, led_max);
+    for (uint8_t i = led_min; i < led_max; i++) {
+        if (i != TRANS_BUT_NUM) {
+            rgb_matrix_set_color(i, 0, 0, 0);
+        }
+    }
+    return rgb_matrix_check_finished_leds(led_max);
+}
 
 /* #if defined(TRIKL_IX10_T)
 const bool LED_MASK[MATRIX_ROWS][MATRIX_COLS] = {
@@ -85,6 +97,26 @@ bool TRIKL_SOLID(effect_params_t* params) {
             rgb_matrix_set_color(i, 255, 0, 0);
             }
         }
+    }
+    
+    return rgb_matrix_check_finished_leds(led_max);
+}
+
+bool TRIKL_SOLID_FULL(effect_params_t* params) {
+    RGB_MATRIX_USE_LIMITS(led_min, led_max);
+    
+    for (uint8_t i = led_min; i < led_max; i++) {
+        // Check if this LED is in an active key range for this product variant
+        extern bool is_key_led(uint8_t i);
+
+        if (i != TRANS_BUT_NUM ) {
+            if (below_press_num != 0 || LED_BELLOWS) {
+                // Bellow pressed: bright green
+            rgb_matrix_set_color(i, 0, 255, 0);
+            } else {
+            rgb_matrix_set_color(i, 255, 0, 0);
+            }
+        } 
     }
     
     return rgb_matrix_check_finished_leds(led_max);
