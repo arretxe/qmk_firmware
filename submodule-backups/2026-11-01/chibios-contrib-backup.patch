@@ -1,0 +1,45 @@
+From ddc1aef78697aa07c21940839eb4ff9091dd7fa4 Mon Sep 17 00:00:00 2001
+From: arretxe <xabier.malbadi@gmail.com>
+Date: Sun, 1 Nov 2026 15:30:38 +0100
+Subject: [PATCH] =?UTF-8?q?feat:=20add=20USB=20low-level=20driver=20header?=
+ =?UTF-8?q?=20for=20SN32F24x=20architecture=20implementado=20las=20macros?=
+ =?UTF-8?q?=20conectando=20el=20bit=20de=20control=20de=20hardware=20de=20?=
+ =?UTF-8?q?la=20resistencia=20pull-up=20interna=20del=20microcontrolador?=
+ =?UTF-8?q?=20Sonix=20(mskDPPU=5FEN,=20bit=2029=20de=20SN=5FUSB->CFG.=20as?=
+ =?UTF-8?q?i=20durante=20los=20primeros=201.5=20segundos=20de=20encendido,?=
+ =?UTF-8?q?=20el=20teclado=20mantiene=20D+=20a=200V=20(desconectado).=20Pa?=
+ =?UTF-8?q?sados=20los=201.5=20segundos=20(cuando=20el=20host=20y=20sus=20?=
+ =?UTF-8?q?rieles=20ya=20est=C3=A1n=20estables),=20el=20teclado=20activa?=
+ =?UTF-8?q?=20D+?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ os/hal/ports/SN32/LLD/SN32F24x/USB/hal_usb_lld.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/os/hal/ports/SN32/LLD/SN32F24x/USB/hal_usb_lld.h b/os/hal/ports/SN32/LLD/SN32F24x/USB/hal_usb_lld.h
+index 72ea3ee4..630f3d5c 100644
+--- a/os/hal/ports/SN32/LLD/SN32F24x/USB/hal_usb_lld.h
++++ b/os/hal/ports/SN32/LLD/SN32F24x/USB/hal_usb_lld.h
+@@ -348,14 +348,14 @@ struct USBDriver {
+  *
+  * @api
+  */
+-#define usb_lld_connect_bus(usbp)
++#define usb_lld_connect_bus(usbp)    (SN_USB->CFG |= (1U << 29))
+ 
+ /**
+  * @brief   Disconnect the USB device.
+  *
+  * @api
+  */
+-#define usb_lld_disconnect_bus(usbp)
++#define usb_lld_disconnect_bus(usbp) (SN_USB->CFG &= ~(1U << 29))
+ 
+ /**
+  * @brief   Start of host wake-up procedure.
+-- 
+2.52.0.windows.1
+
